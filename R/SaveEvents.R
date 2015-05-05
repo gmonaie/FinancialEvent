@@ -16,9 +16,9 @@
 #' After you have defined some events, you can use \code{saveEvents}
 #' to save the entire .event environment to disk.
 #'
-#' \code{LoadEvents} will read a file that contains events and add
+#' \code{loadEvents} will read a file that contains events and add
 #' those event definitions to your .event environment.
-#' \code{ReloadEvents} will remove all instruments in the current
+#' \code{reloadEvents} will remove all instruments in the current
 #' .event environment before loading instruments from disk.
 #'
 #' The \code{file_name} should have a file extension of \dQuote{RData},
