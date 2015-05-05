@@ -36,7 +36,7 @@ attribute will likely be a semi-colon delimited string (e.g.
 }
 \examples{
 \dontrun{
-update_instruments.TTR("GS")
+update_events.TTR("GS")
 getEvent("GS")$defined.by #TTR
 addEventDefinedBy("GS", "gsee", "demo")
 addEventDefinedBy("GS", "gsee;demo") #same
