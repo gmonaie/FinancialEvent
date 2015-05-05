@@ -9,29 +9,29 @@
 ###############################################################################
 
 
-#' List or Remove instrument objects
+#' List or Remove event objects
 #'
-#' display the names of or delete instruments, stocks, options, futures,
+#' display the names of or delete events, stocks, options, futures,
 #' currencies, bonds, funds, spreads, guaranteed_spreads, synthetics,
 #' derivatives, or non-derivatives.
 #'
-#' ls functions return the names of all the instruments of the class implied by
-#' the function name. rm functions remove the instruments of the class implied
+#' ls functions return the names of all the events of the class implied by
+#' the function name. rm functions remove the events of the class implied
 #' by the function name
 #'
-#' rm_instruments and rm_non_derivatives will not delete currencies unless the
+#' rm_events and rm_non_derivatives will not delete currencies unless the
 #' keep.currencies argument is FALSE.
 #'
-#' For the rm functions, x can be a vector of instrument names, or nothing.  If
-#' \code{x} is missing, all instruments of the relevant type will be removed.
+#' For the rm functions, x can be a vector of event names, or nothing.  If
+#' \code{x} is missing, all events of the relevant type will be removed.
 #'
 #' It can be useful to nest these functions to get things like futures
 #' denominated in USD.
 #'
-#' @aliases ls_instruments ls_stocks ls_options ls_option_series ls_futures
+#' @aliases ls_events ls_stocks ls_options ls_option_series ls_futures
 #' ls_future_series ls_currencies ls_non_currencies ls_exchange_rates ls_FX
 #' ls_bonds ls_funds ls_spreads ls_guaranteed_spreads ls_synthetics
-#' ls_derivatives ls_non_derivatives ls_calls ls_puts rm_instruments rm_stocks
+#' ls_derivatives ls_non_derivatives ls_calls ls_puts rm_events rm_stocks
 #' rm_options rm_option_series rm_futures rm_future_series rm_currencies
 #' rm_exchange_rates rm_FX rm_bonds rm_funds rm_spreads rm_synthetics
 #' rm_derivatives rm_non_derivatives
@@ -39,25 +39,25 @@
 #' \sQuote{pattern} are returned.
 #' @param match return only exact matches?
 #' @param verbose be verbose?
-#' @param include.series should future_series or option_series instruments be
+#' @param include.series should future_series or option_series events be
 #' included.
-#' @param x what to remove. if not supplied all instruments of relevent class
+#' @param x what to remove. if not supplied all events of relevent class
 #' will be removed.  For \code{ls_defined.by} x is the string describing how the
-#' instrument was defined.
+#' event was defined.
 #' @param keep.currencies If TRUE, currencies will not be deleted.
 #' @param includeFX should exchange_rates be included in ls_non_currencies
 #' results
 #' @return ls functions return vector of character strings corresponding to
-#' instruments of requested type rm functions are called for side-effect
+#' events of requested type rm functions are called for side-effect
 #' @author Garrett See
-#' @seealso ls_instruments_by, ls_by_currency, ls_by_expiry, ls, rm,
-#' instrument, stock, future, option, currency, FinancialInstrument::sort_ids
+#' @seealso ls_events_by, ls_by_currency, ls_by_expiry, ls, rm,
+#' event, stock, future, option, currency, FinancialInstrument::sort_ids
 #' @examples
 #'
 #' \dontrun{
-#' #rm_instruments(keep.currencies=FALSE) #remove everything from .instrument
+#' #rm_events(keep.currencies=FALSE) #remove everything from .event
 #'
-#' # First, create some instruments
+#' # First, create some events
 #' currency(c("USD", "EUR", "JPY"))
 #' #stocks
 #' stock(c("S", "SE", "SEE", "SPY"), 'USD')
