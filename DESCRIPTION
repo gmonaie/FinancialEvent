@@ -6,7 +6,7 @@ Title: Financial Event Model Instrastructure for R
 Type: Package
 Author: Gei Lin
 Description: Infrastructure for defining meta-data and
-    relationships for financial instruments.
+    relationships for financial events.
 Version: 1.0.0
 Date: 2015-05-05
 URL: https://github.com/gmonaie/FinancialEvent
