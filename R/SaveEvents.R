@@ -108,7 +108,7 @@ loadEvents <-function(file_name="MyEvents", dir="") {
   file.name <- paste(dir, file_name, ".", extension, sep="")
   if (tolower(extension) %in% c("r", "txt")) {
     if (substr(readLines(file.name, 1L), 1, 5) != "#auto") {
-      warning(paste(file.name, "was not created by 'SaveEvents'"))
+      warning(paste(file.name, "was not created by 'saveEvents'"))
     }
     source(file.name)
   } else {
@@ -124,7 +124,7 @@ loadEvents <-function(file_name="MyEvents", dir="") {
 
 
 #' @export
-#' @rdname SaveEvents
+#' @rdname saveEvents
 reloadEvents <- function(file_name="MyEvents", dir="") {
   rm_events(keep.currencies=FALSE)
   loadEvents(file_name=file_name, dir=dir)
