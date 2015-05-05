@@ -11,7 +11,7 @@
 #' class test for object supposedly of type 'event'
 #' @param x object to test for type
 #' @export
-IsEvent <- function( x ) {
+is.event <- function( x ) {
   inherits( x, "event" )
 }
 
@@ -20,17 +20,17 @@ IsEvent <- function( x ) {
 #' @param x character vector
 #' @return logical vector
 #' @export
-IsEventName <- function(x) {
+is.event.name <- function(x) {
   if (!is.character(x))
     return(FALSE)
-  sapply(lapply(x, GetEvent, silent = TRUE), inherits,
+  sapply(lapply(x, getEvent, silent = TRUE), inherits,
          "event")
 }
 
 #' class test for object supposedly of type 'exchange'
 #' @param x object to test for type
 #' @export
-IsExchange <- function( x ) {
+is.exchange <- function( x ) {
   #  x<-getEvent(x, silent=TRUE) # Please use is.exchange.name if x is character
   inherits( x, "exchange" )
 }
@@ -39,9 +39,9 @@ IsExchange <- function( x ) {
 #' primary_id or an identifier of a \code{\link{exchange}}
 #' @param x character vector
 #' @export
-IsExchangeName <- function( x ) {
+is.exchange.name <- function( x ) {
   if (!is.character(x)) return(FALSE)
-  sapply(lapply(x, GetEvent, type='exchange', silent=TRUE), inherits,
+  sapply(lapply(x, getEvent, type='exchange', silent=TRUE), inherits,
          "exchange")
 }
 
@@ -227,8 +227,8 @@ Auction <- function(primary_id, region, root_id = NULL, suffix_id = NULL, identi
     stop(sQuote(primary_id), " already in use and overwrite=FALSE")
   }
   if (missing(region) && !is.null(underlying_id)) {
-    uinstr <- GetEvent(underlying_id, silent = TRUE)
-    if (IsEvent(uinstr)) {
+    uinstr <- getEvent(underlying_id, silent = TRUE)
+    if (is.event(uinstr)) {
       region <- uinstr$region
     }
     else stop("'region' is a required argument")
@@ -266,8 +266,8 @@ EcoData <- function(primary_id, root_id = NULL, suffix_id = NULL, identifiers = 
     stop(sQuote(primary_id), " already in use and overwrite=FALSE")
   }
   if (missing(region) && !is.null(underlying_id)) {
-    uinstr <- GetEvent(underlying_id, silent = TRUE)
-    if (IsEvent(uinstr)) {
+    uinstr <- getEvent(underlying_id, silent = TRUE)
+    if (is.event(uinstr)) {
       region <- uinstr$region
     }
     else stop("'region' is a required argument")
@@ -311,8 +311,8 @@ Policy <- function(primary_id, root_id = NULL, suffix_id = NULL, identifiers = N
     stop(sQuote(primary_id), " already in use and overwrite=FALSE")
   }
   if (missing(region) && !is.null(underlying_id)) {
-    uinstr <- GetEvent(underlying_id, silent = TRUE)
-    if (IsEvent(uinstr)) {
+    uinstr <- getEvent(underlying_id, silent = TRUE)
+    if (is.event(uinstr)) {
       region <- uinstr$region
     }
     else stop("'region' is a required argument")
@@ -350,8 +350,8 @@ OpenClose <- function(primary_id, root_id = NULL, suffix_id = NULL, identifiers 
     stop(sQuote(primary_id), " already in use and overwrite=FALSE")
   }
   if (missing(region) && !is.null(underlying_id)) {
-    uinstr <- GetEvent(underlying_id, silent = TRUE)
-    if (IsEvent(uinstr)) {
+    uinstr <- getEvent(underlying_id, silent = TRUE)
+    if (is.event(uinstr)) {
       region <- uinstr$region
     }
     else stop("'region' is a required argument")
@@ -376,3 +376,28 @@ OpenClose <- function(primary_id, root_id = NULL, suffix_id = NULL, identifiers 
         assign_i = assign_i)
 }
 
+#' Event class print method
+#'
+#' @author Joshua Ulrich, Garrett See
+#' @keywords internal
+#' @export
+print.event <- function(x, ...) {
+  str(unclass(x), comp.str="", no.list=TRUE, give.head=FALSE,
+      give.length=FALSE, give.attr=FALSE, nest.lev=-1, indent.str="")
+  invisible(x)
+}
+
+#' Event class sort method
+#'
+#' @author Garrett See
+#' @keywords internal
+#' @export
+sort.event <- function(x, decreasing=FALSE, na.last=NA, ...) {
+  anchored <- x[c("primary_id", "currency", "multiplier", "tick_size",
+                  "identifiers", "type")]
+  sortable <- x[setdiff(names(x), names(anchored))]
+  out <- c(anchored, sortable[order(names(sortable), decreasing=decreasing,
+                                    na.last=na.last, ...)])
+  class(out) <- class(x)
+  out
+}
