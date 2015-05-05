@@ -69,7 +69,7 @@ is.region.name <- function( x ) {
 #' Regions must also be defined -- all events have a region attached including sessions
 #' E.g. US.CBTN is a based on the US region
 #'
-#' In \dots you may pass any other arbitrary instrument fields that will be used
+#' In \dots you may pass any other arbitrary event fields that will be used
 #' to create 'custom' fields.  S3 classes in \R are basically lists with a class
 #' attribute.  We use this to our advantage to allow us to set arbitrary fields.
 #'
@@ -78,15 +78,15 @@ is.region.name <- function( x ) {
 #' still be unique.  Perhaps Bloomberg, Reuters-X.RIC, CUSIP, etc.
 #' \code{\link{getEvent}} will return the first (and only the first) match
 #' that it finds, starting with the primary_id, and then searching the
-#' primary_ids of all instruments for each of the \code{identifiers}.  Note that
-#' when a large number of instruments are defined, it is faster to find
-#' instruments by \code{primary_id} than by \code{identifiers} because it looks
+#' primary_ids of all events for each of the \code{identifiers}.  Note that
+#' when a large number of events are defined, it is faster to find
+#' events by \code{primary_id} than by \code{identifiers} because it looks
 #' for \code{primary_id}s first.
 #'
 #' The \code{primary_id} will be coerced within reason to a valid \R variable
 #' name by using \code{\link{make.names}}. We also remove any leading '1' digit
 #' (a simple workaround to account for issues with the Reuters API).  If you are
-#' defining an instrument that is not a \code{session}, with a primary_id that
+#' defining an event that is not a \code{session}, with a primary_id that
 #' already belongs to a \code{session}, a new primary_id will be create using
 #' \code{make.names}.  For example, \code{stock("USD", currency("USD"))}, would
 #' create a stock with a primary_id of \dQuote{USD.1} instead of overwritting
@@ -102,22 +102,22 @@ is.region.name <- function( x ) {
 #' Others may be specified using a named list of identifiers, as described above.
 #'
 #' \code{assign_i} will use \code{\link{assign}} to place the constructed
-#' instrument class object into the \code{.instrument} environment.  Most of the
+#' event class object into the \code{.event} environment.  Most of the
 #' special type-specific constructors will use \code{assign_i=TRUE} internally.
 #' Calling with \code{assign_i=FALSE}, or not specifying it, will return an
 #' object and will \emph{not} store it.  Use this option ether to wrap calls to
-#' \code{instrument} prior to further processing (and presumably assignment) or
+#' \code{event} prior to further processing (and presumably assignment) or
 #' to test your parameters before assignment.
 #'
 #' If \code{overwrite=FALSE} is used, an error will be thrown if any
 #' \code{primary_id}s are already in use.
 #'
-#' As of version 0.10.0, the .instrument environment is located at the top level
-#' of the package. i.e. \code{.instrument}.
+#' As of version 0.10.0, the .event environment is located at the top level
+#' of the package. i.e. \code{.event}.
 #'
 #' \code{future} and \code{option} are used to define the contract specs of a
-#' series of instruments.  The \code{primary_id} for these can begin with 1 or
-#' 2 dots if you need to avoid overwriting another instrument.
+#' series of events.  The \code{primary_id} for these can begin with 1 or
+#' 2 dots if you need to avoid overwriting another event.
 #' For example, if you have a \code{stock} with \sQuote{SPY} as the
 #' \code{primary_id}, you could use \sQuote{.SPY} as the \code{primary_id} of
 #' the \code{option} specs, and \sQuote{..SPY} as the \code{primary_id} of the
@@ -125,27 +125,27 @@ is.region.name <- function( x ) {
 #'
 #' You can (optionally) provide a \code{src} argument in which case, it will be
 #' used in a call to \code{\link[quantmod]{setSymbolLookup}}.
-#' @param primary_id String describing the unique ID for the instrument. Most
+#' @param primary_id String describing the unique ID for the event. Most
 #'   of the wrappers allow this to be a vector.
 #' @param ... Any other passthru parameters, including
-#' @param underlying_id For derivatives, the identifier of the instrument that
-#'   this one is derived from, may be \code{NULL} for cash settled instruments
+#' @param underlying_id For derivatives, the identifier of the event that
+#'   this one is derived from, may be \code{NULL} for cash settled events
 #' @param currency String describing the currency ID of an object of type
 #'   \code{\link{currency}}
-#' @param multiplier Numeric multiplier to apply to the price in the instrument
+#' @param multiplier Numeric multiplier to apply to the price in the event
 #'   to get to notional value.
-#' @param tick_size The tick increment of the instrument price in it's
+#' @param tick_size The tick increment of the event price in it's
 #'   trading venue, as numeric quantity (e.g. 1/8 is .125)
 #' @param identifiers Named list of any other identifiers that should also be
-#'   stored for this instrument
-#' @param type instrument type to be appended to the class definition, typically
+#'   stored for this event
+#' @param type event type to be appended to the class definition, typically
 #'   not set by user
-#' @param assign_i TRUE/FALSE. Should the instrument be assigned to the
-#'   \code{.instrument} environment?  Default is FALSE for \code{instrument},
+#' @param assign_i TRUE/FALSE. Should the event be assigned to the
+#'   \code{.event} environment?  Default is FALSE for \code{event},
 #'   TRUE for wrappers.
-#' @param overwrite TRUE/FALSE. Should existing instruments with the same
+#' @param overwrite TRUE/FALSE. Should existing events with the same
 #'   primary_id be overwritten? Default is TRUE. If FALSE, an error will be
-#'   thrown and the instrument will not be created.
+#'   thrown and the event will not be created.
 #' @aliases
 #' Exchange
 #' Session
@@ -522,8 +522,8 @@ getEvent <- function(x, Dates=NULL, silent=FALSE, type='event'){
 #' @export
 event_attr <- function(primary_id, attr, value, ...) {
   instr <- try(getEvent(primary_id, silent=TRUE, ...))
-  if (inherits(instr, 'try-error') || !is.instrument(instr))
-    stop(paste('instrument ',primary_id,' must be defined first.',sep=''))
+  if (inherits(instr, 'try-error') || !is.event(instr))
+    stop(paste('event ',primary_id,' must be defined first.',sep=''))
   if (attr == 'primary_id') {
     rm(list = primary_id, pos = .event)
   } else if (attr == 'currency') {
@@ -539,7 +539,7 @@ event_attr <- function(primary_id, attr, value, ...) {
       stop("tick_size must be NULL or a single number")
     }
   } else if (attr == 'type') {
-    tclass <- unique(c(value, "instrument"))
+    tclass <- unique(c(value, "event"))
     class(instr) <- tclass
   } else if (attr == 'IB') {
     if (inherits(value, 'twsContract')) {
@@ -558,8 +558,8 @@ event_attr <- function(primary_id, attr, value, ...) {
       value <- list()
     } else if (!is.list(value)) {
       #warning("identifiers must be a list. Appending current identifiers.")
-      # add.identifier will convert to list
-      return(add.identifier(primary_id, value))
+      # addEventIdentifier will convert to list
+      return(addEventIdentifier(primary_id, value))
     }
   }
   instr[[attr]] <- value
@@ -567,11 +567,11 @@ event_attr <- function(primary_id, attr, value, ...) {
 }
 
 
-#' Add an identifier to an \code{instrument}
+#' Add an event identifier to an \code{event}
 #'
-#' Add an identifier to an \code{\link{instrument}} unless the instrument
+#' Add an identifier to an \code{\link{event}} unless the event
 #' already has that identifier.
-#' @param primary_id primary_id of an \code{\link{instrument}}
+#' @param primary_id primary_id of an \code{\link{event}}
 #' @param ... identifiers passed as regular named arguments.
 #' @return called for side-effect
 #' @author Garrett See
@@ -585,11 +585,11 @@ event_attr <- function(primary_id, attr, value, ...) {
 #' all.equal(getEvent("x3"), getEvent("XXX")) #TRUE
 #' }
 #' @export
-add.identifier <- function(primary_id, ...) {
+addEventIdentifier <- function(primary_id, ...) {
   new.ids <- as.list(unlist(list(...)))
   instr <- getEvent(primary_id)
-  if (!inherits(instr, "instrument")) {
-    stop(paste(primary_id, "is not a defined instrument"))
+  if (!inherits(instr, "event")) {
+    stop(paste(primary_id, "is not a defined event"))
   }
   ids <- c(instr[["identifiers"]], new.ids)
   if (all(is.null(names(ids)))) {
@@ -599,39 +599,39 @@ add.identifier <- function(primary_id, ...) {
 }
 
 
-#' Add a source to the defined.by field of an \code{instrument}
+#' Add a source to the defined.by field of an \code{event}
 #'
 #' Concatenate a string or strings (passed through dots) to the defined.by
-#' field of an instrument (separated by semi-colons).  Any duplicates will be
+#' field of an event (separated by semi-colons).  Any duplicates will be
 #' removed.  See Details.
 #'
 #' If there is already a value for the \code{defined.by} attribute of the
-#' \code{primary_id} instrument, that string will be split on semi-colons and
+#' \code{primary_id} event, that string will be split on semi-colons and
 #' converted to a character vector.  That will be \code{c}ombined with any new
 #' strings (in \code{...}).  The unique value of this new vector will then
 #' be converted into a semi-colon delimited string that will be assigned to
-#' the \code{defined.by} attribute of the \code{primary_ids}' instruments
+#' the \code{defined.by} attribute of the \code{primary_ids}' events
 #'
-#' Many functions that create or update instrument definitions will also add or
-#' update the value of the defined.by attribute of that instrument.  If an
-#' instrument has been updated by more than one function, it's \code{defined.by}
+#' Many functions that create or update event definitions will also add or
+#' update the value of the defined.by attribute of that event.  If an
+#' event has been updated by more than one function, it's \code{defined.by}
 #' attribute will likely be a semi-colon delimited string (e.g.
 #' \dQuote{TTR;yahoo}).
 #' @param primary_ids character vector of primary_ids of
-#'   \code{\link{instrument}}s
+#'   \code{\link{event}}s
 #' @param ... strings, or character vector, or semi-colon delimited string.
 #' @return called for side-effect
 #' @author Gei Lin
-#' @seealso \code{\link{add.identifier}}, \code{\link{event_attr}}
+#' @seealso \code{\link{addEventIdentifier}}, \code{\link{event_attr}}
 #' @examples
 #' \dontrun{
 #' update_instruments.TTR("GS")
 #' getEvent("GS")$defined.by #TTR
-#' add.defined.by("GS", "gsee", "demo")
-#' add.defined.by("GS", "gsee;demo") #same
+#' addEventDefinedBy("GS", "gsee", "demo")
+#' addEventDefinedBy("GS", "gsee;demo") #same
 #' }
 #' @export
-add.defined.by <- function(primary_ids, ...) {
+addEventDefinedBy <- function(primary_ids, ...) {
   for(id in primary_ids) {
     db <- getEvent(id)[["defined.by"]]
     event_attr(id, "defined.by",
