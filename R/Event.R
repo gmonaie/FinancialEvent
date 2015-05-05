@@ -16,7 +16,7 @@ is.event <- function( x ) {
 }
 
 #' check each element of a character vector to see if it is either the
-#' primary_id or an identifier of an \code{\link{instrument}}
+#' primary_id or an identifier of an \code{\link{event}}
 #' @param x character vector
 #' @return logical vector
 #' @export
@@ -88,8 +88,8 @@ is.region.name <- function( x ) {
 #' (a simple workaround to account for issues with the Reuters API).  If you are
 #' defining an event that is not a \code{session}, with a primary_id that
 #' already belongs to a \code{session}, a new primary_id will be create using
-#' \code{make.names}.  For example, \code{stock("USD", currency("USD"))}, would
-#' create a stock with a primary_id of \dQuote{USD.1} instead of overwritting
+#' \code{make.names}.  For example, \code{auction("USD", Region("USD"))}, would
+#' create a auction with a primary_id of \dQuote{USD.1} instead of overwritting
 #' the \code{session}.
 #'
 #' Please use some care to choose your primary identifiers so that R won't
@@ -118,10 +118,10 @@ is.region.name <- function( x ) {
 #' \code{future} and \code{option} are used to define the contract specs of a
 #' series of events.  The \code{primary_id} for these can begin with 1 or
 #' 2 dots if you need to avoid overwriting another event.
-#' For example, if you have a \code{stock} with \sQuote{SPY} as the
+#' For example, if you have a \code{auction} with \sQuote{SPY} as the
 #' \code{primary_id}, you could use \sQuote{.SPY} as the \code{primary_id} of
 #' the \code{option} specs, and \sQuote{..SPY} as the \code{primary_id} of the
-#' single stock \code{future} specs. (or vice versa)
+#' single auction \code{future} specs. (or vice versa)
 #'
 #' You can (optionally) provide a \code{src} argument in which case, it will be
 #' used in a call to \code{\link[quantmod]{setSymbolLookup}}.
@@ -130,8 +130,8 @@ is.region.name <- function( x ) {
 #' @param ... Any other passthru parameters, including
 #' @param underlying_id For derivatives, the identifier of the event that
 #'   this one is derived from, may be \code{NULL} for cash settled events
-#' @param currency String describing the currency ID of an object of type
-#'   \code{\link{currency}}
+#' @param region String describing the region ID of an object of type
+#'   \code{\link{region}}
 #' @param multiplier Numeric multiplier to apply to the price in the event
 #'   to get to notional value.
 #' @param tick_size The tick increment of the event price in it's
@@ -147,6 +147,7 @@ is.region.name <- function( x ) {
 #'   primary_id be overwritten? Default is TRUE. If FALSE, an error will be
 #'   thrown and the event will not be created.
 #' @aliases
+#' Region
 #' Exchange
 #' Session
 #' Auction
@@ -235,175 +236,179 @@ Event <- function(primary_id, ..., region, identifiers = NULL, type = NULL, assi
 
 #' @export
 #' @rdname Event
-Auction <- function(primary_id, region, root_id = NULL, suffix_id = NULL, identifiers = NULL, assign_i = TRUE, overwrite = TRUE, ...,
-                     underlying_id = NULL) {
-  if (missing(primary_id))
-    primary_id <- paste("..", underlying_id, sep = "")
-  if (length(primary_id) > 1)
-    stop("primary_id must be of length 1")
-  if (!isTRUE(overwrite) && assign_i == TRUE && primary_id %in%
-        ls_events()) {
-    stop(sQuote(primary_id), " already in use and overwrite=FALSE")
-  }
-  if (missing(region) && !is.null(underlying_id)) {
-    uinstr <- getEvent(underlying_id, silent = TRUE)
-    if (is.event(uinstr)) {
-      region <- uinstr$region
+Auction <- function(primary_id , region=NULL , multiplier=1 , tick_size=.01, 
+                  identifiers = NULL, assign_i=TRUE, overwrite=TRUE, ...){
+    if (is.null(region)) stop ("'region' is a required argument")
+    if (!isTRUE(overwrite) && isTRUE(assign_i) &&
+        any(in.use <- primary_id %in% (li <- ls_events()))) {
+        stop(paste(paste("In Auction(...) : ",
+                          "overwrite is FALSE and primary_id", 
+                          if (sum(in.use) > 1) "s are" else " is", 
+                          " already in use:\n", sep=""),
+                   paste(intersect(primary_id, li), collapse=", ")), 
+             call.=FALSE)
     }
-    else stop("'region' is a required argument")
-  }
-  if (is.null(underlying_id)) {
-    warning("underlying_id should only be NULL for non-exchange events")
-  }
-  else {
-    if (!exists(underlying_id, where = .event, inherits = TRUE)) {
-      warning("underlying_id not found")
+    if (length(primary_id) > 1) {
+        out <- sapply(primary_id, Auction, region=region, 
+                      multiplier=multiplier, tick_size=tick_size, 
+                      identifiers=identifiers, assign_i=assign_i,
+                      ...=..., simplify=assign_i)
+        return(if (assign_i) unname(out) else out)
     }
-    if (primary_id == underlying_id) {
-      primary_id <- paste("..", primary_id, sep = "")
-      warning(paste("primary_id is the same as underlying_id,",
-                    "the event will be given a primary_id of",
-                    primary_id))
-    }
-  }
-  Event(primary_id = primary_id, region = region,
-        identifiers = identifiers,
-        ..., type = "auction", underlying_id = underlying_id,
-        assign_i = assign_i)
+    Event(primary_id=primary_id, region=region, multiplier=multiplier, 
+               tick_size=tick_size, identifiers = identifiers, ..., 
+               type="auction", assign_i=assign_i)
 }
 
 #' @export
 #' @rdname Event
-EcoData <- function(primary_id, root_id = NULL, suffix_id = NULL, identifiers = NULL, assign_i = TRUE, overwrite = TRUE, ...,
-                     underlying_id = NULL) {
-  if (missing(primary_id))
-    primary_id <- paste("..", underlying_id, sep = "")
-  if (length(primary_id) > 1)
-    stop("primary_id must be of length 1")
-  if (!isTRUE(overwrite) && assign_i == TRUE && primary_id %in%
-        ls_events()) {
-    stop(sQuote(primary_id), " already in use and overwrite=FALSE")
-  }
-  if (missing(region) && !is.null(underlying_id)) {
-    uinstr <- getEvent(underlying_id, silent = TRUE)
-    if (is.event(uinstr)) {
-      region <- uinstr$region
+EcoData <- function(primary_id , region=NULL , multiplier=1 , tick_size=.01, 
+                  identifiers = NULL, assign_i=TRUE, overwrite=TRUE, ...){
+    if (is.null(region)) stop ("'region' is a required argument")
+    if (!isTRUE(overwrite) && isTRUE(assign_i) &&
+        any(in.use <- primary_id %in% (li <- ls_events()))) {
+        stop(paste(paste("In EcoData(...) : ",
+                          "overwrite is FALSE and primary_id", 
+                          if (sum(in.use) > 1) "s are" else " is", 
+                          " already in use:\n", sep=""),
+                   paste(intersect(primary_id, li), collapse=", ")), 
+             call.=FALSE)
     }
-    else stop("'region' is a required argument")
-  }
-  if (is.null(underlying_id)) {
-    warning("underlying_id should only be NULL for non-exchange events")
-  }
-  else {
-    if (!exists(underlying_id, where = .event, inherits = TRUE)) {
-      warning("underlying_id not found")
+    if (length(primary_id) > 1) {
+        out <- sapply(primary_id, EcoData, region=region, 
+                      multiplier=multiplier, tick_size=tick_size, 
+                      identifiers=identifiers, assign_i=assign_i,
+                      ...=..., simplify=assign_i)
+        return(if (assign_i) unname(out) else out)
     }
-    if (primary_id == underlying_id) {
-      primary_id <- paste("..", primary_id, sep = "")
-      warning(paste("primary_id is the same as underlying_id,",
-                    "the event will be given a primary_id of",
-                    primary_id))
-    }
-  }
-  Event(primary_id = primary_id, region = region,
-        identifiers = identifiers,
-        ..., type = "ecodata", underlying_id = underlying_id,
-        assign_i = assign_i)
+    Event(primary_id=primary_id, region=region, multiplier=multiplier, 
+               tick_size=tick_size, identifiers = identifiers, ..., 
+               type="ecodata", assign_i=assign_i)
 }
 
 #' @export
 #' @rdname Event
-Policy <- function(primary_id, root_id = NULL, suffix_id = NULL, identifiers = NULL, assign_i = TRUE, overwrite = TRUE, ...,
-                    underlying_id = NULL) {
-  if (missing(primary_id))
-    primary_id <- paste("..", underlying_id, sep = "")
-  if (length(primary_id) > 1)
-    stop("primary_id must be of length 1")
-  if (!isTRUE(overwrite) && assign_i == TRUE && primary_id %in%
-        ls_events()) {
-    stop(sQuote(primary_id), " already in use and overwrite=FALSE")
-  }
-  if (missing(region) && !is.null(underlying_id)) {
-    uinstr <- getEvent(underlying_id, silent = TRUE)
-    if (is.event(uinstr)) {
-      region <- uinstr$region
+Policy <- function(primary_id , region=NULL , multiplier=1 , tick_size=.01, 
+                  identifiers = NULL, assign_i=TRUE, overwrite=TRUE, ...){
+    if (is.null(region)) stop ("'region' is a required argument")
+    if (!isTRUE(overwrite) && isTRUE(assign_i) &&
+        any(in.use <- primary_id %in% (li <- ls_events()))) {
+        stop(paste(paste("In Policy(...) : ",
+                          "overwrite is FALSE and primary_id", 
+                          if (sum(in.use) > 1) "s are" else " is", 
+                          " already in use:\n", sep=""),
+                   paste(intersect(primary_id, li), collapse=", ")), 
+             call.=FALSE)
     }
-    else stop("'region' is a required argument")
-  }
-  if (is.null(underlying_id)) {
-    warning("underlying_id should only be NULL for non-exchange events")
-  }
-  else {
-    if (!exists(underlying_id, where = .event, inherits = TRUE)) {
-      warning("underlying_id not found")
+    if (length(primary_id) > 1) {
+        out <- sapply(primary_id, Policy, region=region, 
+                      multiplier=multiplier, tick_size=tick_size, 
+                      identifiers=identifiers, assign_i=assign_i,
+                      ...=..., simplify=assign_i)
+        return(if (assign_i) unname(out) else out)
     }
-    if (primary_id == underlying_id) {
-      primary_id <- paste("..", primary_id, sep = "")
-      warning(paste("primary_id is the same as underlying_id,",
-                    "the event will be given a primary_id of",
-                    primary_id))
-    }
-  }
-  Event(primary_id = primary_id, region = region,
-        identifiers = identifiers,
-        ..., type = "policy", underlying_id = underlying_id,
-        assign_i = assign_i)
+    Event(primary_id=primary_id, region=region, multiplier=multiplier, 
+               tick_size=tick_size, identifiers = identifiers, ..., 
+               type="policy", assign_i=assign_i)
 }
 
 #' @export
 #' @rdname Event
-OpenClose <- function(primary_id, root_id = NULL, suffix_id = NULL, identifiers = NULL, assign_i = TRUE, overwrite = TRUE, ...,
-                   underlying_id = NULL) {
-  if (missing(primary_id))
-    primary_id <- paste("..", underlying_id, sep = "")
-  if (length(primary_id) > 1)
-    stop("primary_id must be of length 1")
-  if (!isTRUE(overwrite) && assign_i == TRUE && primary_id %in%
-        ls_events()) {
-    stop(sQuote(primary_id), " already in use and overwrite=FALSE")
-  }
-  if (missing(region) && !is.null(underlying_id)) {
-    uinstr <- getEvent(underlying_id, silent = TRUE)
-    if (is.event(uinstr)) {
-      region <- uinstr$region
+OpenClose <- function(primary_id , region=NULL , multiplier=1 , tick_size=.01, 
+                  identifiers = NULL, assign_i=TRUE, overwrite=TRUE, ...){
+    if (is.null(region)) stop ("'region' is a required argument")
+    if (!isTRUE(overwrite) && isTRUE(assign_i) &&
+        any(in.use <- primary_id %in% (li <- ls_events()))) {
+        stop(paste(paste("In OpenClose(...) : ",
+                          "overwrite is FALSE and primary_id", 
+                          if (sum(in.use) > 1) "s are" else " is", 
+                          " already in use:\n", sep=""),
+                   paste(intersect(primary_id, li), collapse=", ")), 
+             call.=FALSE)
     }
-    else stop("'region' is a required argument")
-  }
-  if (is.null(underlying_id)) {
-    warning("underlying_id should only be NULL for non-exchange events")
-  }
-  else {
-    if (!exists(underlying_id, where = .event, inherits = TRUE)) {
-      warning("underlying_id not found")
+    if (length(primary_id) > 1) {
+        out <- sapply(primary_id, OpenClose, region=region, 
+                      multiplier=multiplier, tick_size=tick_size, 
+                      identifiers=identifiers, assign_i=assign_i,
+                      ...=..., simplify=assign_i)
+        return(if (assign_i) unname(out) else out)
     }
-    if (primary_id == underlying_id) {
-      primary_id <- paste("..", primary_id, sep = "")
-      warning(paste("primary_id is the same as underlying_id,",
-                    "the event will be given a primary_id of",
-                    primary_id))
-    }
-  }
-  Event(primary_id = primary_id, region = region,
-        identifiers = identifiers,
-        ..., type = "openclose", underlying_id = underlying_id,
-        assign_i = assign_i)
+    Event(primary_id=primary_id, region=region, multiplier=multiplier, 
+               tick_size=tick_size, identifiers = identifiers, ..., 
+               type="openclose", assign_i=assign_i)
 }
 
-#' Primary accessor function for getting objects of class 'instrument'
+#' @export
+#' @rdname Event
+Region <- function(primary_id, identifiers = NULL, assign_i=TRUE, ...){
+    if (hasArg("overwrite")) {
+        if (!list(...)$overwrite && isTRUE(assign_i) &&
+            any(in.use <- primary_id %in% (li <- ls_events()))) {
+            stop(paste(paste("In Region(...) : ",
+                              "overwrite is FALSE and primary_id", 
+                              if (sum(in.use) > 1) "s are" else " is", 
+                              " already in use:\n", sep=""),
+                       paste(intersect(primary_id, li), collapse=", ")), 
+                call.=FALSE)
+        }
+    }
+    if (length(primary_id) > 1) {
+        out <- sapply(primary_id, region, identifiers=identifiers, 
+                      assign_i=assign_i, ...=..., simplify=assign_i)
+        return(if (assign_i) unname(out) else out)
+    }
+    if (is.null(identifiers)) identifiers <- list()
+    ccy <- try(getEvent(primary_id,type='region',silent=TRUE))
+    if (is.event(ccy)) {
+        if (length(identifiers) > 0) {
+            if (!is.list(identifiers)) identifiers <- list(identifiers)
+            for (nm in names(ccy$identifiers)[names(ccy$identifiers) %in% 
+                                              names(identifiers)]) {
+                ccy$identifiers[[nm]] <- identifiers[[nm]]
+            }
+            identifiers <- identifiers[names(identifiers)[!names(identifiers) 
+                               %in% names(ccy$identifiers)]]
+            ccy$identifiers <- c(identifiers, ccy$identifiers)
+        }
+    } else ccy <- list(primary_id = primary_id,
+                        region = primary_id,
+                        multiplier = 1,
+                        tick_size= .01,
+                        identifiers = identifiers,
+                        type = "region")
+    dargs <- list(...)
+    if (!is.null(dargs)) {
+        for (nm in names(ccy)[names(ccy) %in% names(dargs)]) {
+            ccy[[nm]] <- dargs[[nm]]
+        }
+        dargs <- dargs[names(dargs)[!names(dargs) %in% names(ccy)]]
+        ccy <- c(ccy,dargs)
+    }        
+    class(ccy)<-c("region","event")
+    if (assign_i) {
+        assign(primary_id, ccy, 
+               pos=as.environment(.event) )
+        return(primary_id)
+    }
+    ccy
+}
+
+
+#' Primary accessor function for getting objects of class 'event'
 #'
-#' This function will search the \code{.instrument} environment for objects of
+#' This function will search the \code{.event} environment for objects of
 #' class \code{type}, using first the \code{primary_id} and then any
-#' \code{identifiers} to locate the instrument.  Finally, it will try adding 1
+#' \code{identifiers} to locate the event.  Finally, it will try adding 1
 #' and then 2 dots to the beginning of the \code{primary_id} to see if an
-#' instrument was stored there to avoid naming conflicts.
+#' event was stored there to avoid naming conflicts.
 #'
 #' \code{\link{future}} and \code{\link{option}} objects may have a primary_id
 #' that begins with 1 or 2 dots (in order to avoid naming conflics).  For
-#' example, the root specs for options (or futures) on the stock with ticker
+#' example, the root specs for options (or futures) on the auction with ticker
 #' "SPY" may be stored with a primary_id of "SPY", ".SPY", or "..SPY".
 #' \code{getEvent} will try using each possible \code{primary_id}
-#' until it finds an instrument of the appropriate \code{type}
-#' @param x String identifier of instrument to retrieve
+#' until it finds an event of the appropriate \code{type}
+#' @param x String identifier of event to retrieve
 #' @param Dates date range to retrieve 'as of', may not currently be implemented
 #' @param silent if TRUE, will not warn on failure, default FALSE
 #' @param type class of object to look for. See Details
@@ -411,7 +416,7 @@ OpenClose <- function(primary_id, root_id = NULL, suffix_id = NULL, identifiers 
 #' \dontrun{
 #' option('..VX', multiplier=100,
 #'   underlying_id=future('.VX',multiplier=1000,
-#'     underlying_id=synthetic('VIX', currency("USD"))))
+#'     underlying_id=synthetic('VIX', region("USD"))))
 #'
 #' getEvent("VIX")
 #' getEvent('VX') #returns the future
@@ -425,7 +430,7 @@ getEvent <- function(x, Dates=NULL, silent=FALSE, type='event'){
   if(inherits(tmp_instr,"try-error") || !inherits(tmp_instr, type)){
     xx <- make.names(x)
     ## First, look to see if x matches any identifiers.
-    # unlist all instruments into a big named vector
+    # unlist all events into a big named vector
     ul.instr <- unlist(as.list(.event,
                                all.names=TRUE))
     # subset by names that include "identifiers"
@@ -481,7 +486,7 @@ getEvent <- function(x, Dates=NULL, silent=FALSE, type='event'){
 #' If the \code{attr} you are changing is \dQuote{type}, the event will be
 #' reclassed with that type. If \code{attr} is \dQuote{src}, \code{value} will
 #' be used in a call to \code{setSymbolLookup}.  Other checks are in place to
-#' make sure that \dQuote{currency} remains a \code{\link{currency}} object and
+#' make sure that \dQuote{region} remains a \code{\link{region}} object and
 #' that \dQuote{multiplier} and \dQuote{tick_size} can only be changed to
 #' reasonable values.
 #'
@@ -502,8 +507,8 @@ getEvent <- function(x, Dates=NULL, silent=FALSE, type='event'){
 #'   function with \code{value=NULL}
 #' @examples
 #' \dontrun{
-#' currency("USD")
-#' stock("SPY","USD")
+#' region("USD")
+#' auction("SPY","USD")
 #' event_attr("USD","description","U.S. Dollar")
 #' event_attr("SPY", "description", "An ETF")
 #' getEvent("USD")
@@ -526,9 +531,9 @@ event_attr <- function(primary_id, attr, value, ...) {
     stop(paste('event ',primary_id,' must be defined first.',sep=''))
   if (attr == 'primary_id') {
     rm(list = primary_id, pos = .event)
-  } else if (attr == 'currency') {
-    if (!is.currency.name(value)) {
-      stop("currency ", value, " must be an object of type 'currency'")
+  } else if (attr == 'region') {
+    if (!is.region.name(value)) {
+      stop("region ", value, " must be an object of type 'region'")
     }
   } else if (attr == 'multiplier') {
     if (!is.numeric(value) || length(value) > 1) {
@@ -578,7 +583,7 @@ event_attr <- function(primary_id, attr, value, ...) {
 #' @seealso \code{\link{event_attr}}
 #' @examples
 #' \dontrun{
-#' stock("XXX", currency("USD"))
+#' auction("XXX", region("USD"))
 #' add.identifier("XXX", yahoo="^XXX")
 #' getEvent("^XXX")
 #' add.identifier("^XXX", "x3")
@@ -657,7 +662,7 @@ print.event <- function(x, ...) {
 #' @keywords internal
 #' @export
 sort.event <- function(x, decreasing=FALSE, na.last=NA, ...) {
-  anchored <- x[c("primary_id", "currency", "multiplier", "tick_size",
+  anchored <- x[c("primary_id", "region",
                   "identifiers", "type")]
   sortable <- x[setdiff(names(x), names(anchored))]
   out <- c(anchored, sortable[order(names(sortable), decreasing=decreasing,

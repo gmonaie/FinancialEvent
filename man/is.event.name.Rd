@@ -3,7 +3,7 @@
 \name{is.event.name}
 \alias{is.event.name}
 \title{check each element of a character vector to see if it is either the
-primary_id or an identifier of an \code{\link{instrument}}}
+primary_id or an identifier of an \code{\link{event}}}
 \usage{
 is.event.name(x)
 }
@@ -15,6 +15,6 @@ logical vector
 }
 \description{
 check each element of a character vector to see if it is either the
-primary_id or an identifier of an \code{\link{instrument}}
+primary_id or an identifier of an \code{\link{event}}
 }
 

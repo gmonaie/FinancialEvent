@@ -8,31 +8,35 @@
 \alias{Exchange}
 \alias{OpenClose}
 \alias{Policy}
+\alias{Region}
 \alias{Session}
 \title{event class constructors}
 \usage{
 Event(primary_id, ..., region, identifiers = NULL, type = NULL,
   assign_i = FALSE, overwrite = TRUE)
 
-Auction(primary_id, region, root_id = NULL, suffix_id = NULL,
-  identifiers = NULL, assign_i = TRUE, overwrite = TRUE, ...,
-  underlying_id = NULL)
+Auction(primary_id, region = NULL, multiplier = 1, tick_size = 0.01,
+  identifiers = NULL, assign_i = TRUE, overwrite = TRUE, ...)
 
-EcoData(primary_id, root_id = NULL, suffix_id = NULL, identifiers = NULL,
-  assign_i = TRUE, overwrite = TRUE, ..., underlying_id = NULL)
+EcoData(primary_id, region = NULL, multiplier = 1, tick_size = 0.01,
+  identifiers = NULL, assign_i = TRUE, overwrite = TRUE, ...)
 
-Policy(primary_id, root_id = NULL, suffix_id = NULL, identifiers = NULL,
-  assign_i = TRUE, overwrite = TRUE, ..., underlying_id = NULL)
+Policy(primary_id, region = NULL, multiplier = 1, tick_size = 0.01,
+  identifiers = NULL, assign_i = TRUE, overwrite = TRUE, ...)
 
-OpenClose(primary_id, root_id = NULL, suffix_id = NULL,
-  identifiers = NULL, assign_i = TRUE, overwrite = TRUE, ...,
-  underlying_id = NULL)
+OpenClose(primary_id, region = NULL, multiplier = 1, tick_size = 0.01,
+  identifiers = NULL, assign_i = TRUE, overwrite = TRUE, ...)
+
+Region(primary_id, identifiers = NULL, assign_i = TRUE, ...)
 }
 \arguments{
 \item{primary_id}{String describing the unique ID for the event. Most
 of the wrappers allow this to be a vector.}
 
 \item{...}{Any other passthru parameters, including}
+
+\item{region}{String describing the region ID of an object of type
+\code{\link{region}}}
 
 \item{identifiers}{Named list of any other identifiers that should also be
 stored for this event}
@@ -48,17 +52,14 @@ TRUE for wrappers.}
 primary_id be overwritten? Default is TRUE. If FALSE, an error will be
 thrown and the event will not be created.}
 
-\item{underlying_id}{For derivatives, the identifier of the event that
-this one is derived from, may be \code{NULL} for cash settled events}
-
-\item{currency}{String describing the currency ID of an object of type
-\code{\link{currency}}}
-
 \item{multiplier}{Numeric multiplier to apply to the price in the event
 to get to notional value.}
 
 \item{tick_size}{The tick increment of the event price in it's
 trading venue, as numeric quantity (e.g. 1/8 is .125)}
+
+\item{underlying_id}{For derivatives, the identifier of the event that
+this one is derived from, may be \code{NULL} for cash settled events}
 }
 \description{
 All 'exchange' and 'session' events must be defined before events of other types
@@ -87,8 +88,8 @@ name by using \code{\link{make.names}}. We also remove any leading '1' digit
 (a simple workaround to account for issues with the Reuters API).  If you are
 defining an event that is not a \code{session}, with a primary_id that
 already belongs to a \code{session}, a new primary_id will be create using
-\code{make.names}.  For example, \code{stock("USD", currency("USD"))}, would
-create a stock with a primary_id of \dQuote{USD.1} instead of overwritting
+\code{make.names}.  For example, \code{auction("USD", Region("USD"))}, would
+create a auction with a primary_id of \dQuote{USD.1} instead of overwritting
 the \code{session}.
 
 Please use some care to choose your primary identifiers so that R won't
@@ -117,10 +118,10 @@ of the package. i.e. \code{.event}.
 \code{future} and \code{option} are used to define the contract specs of a
 series of events.  The \code{primary_id} for these can begin with 1 or
 2 dots if you need to avoid overwriting another event.
-For example, if you have a \code{stock} with \sQuote{SPY} as the
+For example, if you have a \code{auction} with \sQuote{SPY} as the
 \code{primary_id}, you could use \sQuote{.SPY} as the \code{primary_id} of
 the \code{option} specs, and \sQuote{..SPY} as the \code{primary_id} of the
-single stock \code{future} specs. (or vice versa)
+single auction \code{future} specs. (or vice versa)
 
 You can (optionally) provide a \code{src} argument in which case, it will be
 used in a call to \code{\link[quantmod]{setSymbolLookup}}.

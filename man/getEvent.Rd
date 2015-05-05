@@ -2,12 +2,12 @@
 % Please edit documentation in R/Event.R
 \name{getEvent}
 \alias{getEvent}
-\title{Primary accessor function for getting objects of class 'instrument'}
+\title{Primary accessor function for getting objects of class 'event'}
 \usage{
 getEvent(x, Dates = NULL, silent = FALSE, type = "event")
 }
 \arguments{
-\item{x}{String identifier of instrument to retrieve}
+\item{x}{String identifier of event to retrieve}
 
 \item{Dates}{date range to retrieve 'as of', may not currently be implemented}
 
@@ -16,25 +16,25 @@ getEvent(x, Dates = NULL, silent = FALSE, type = "event")
 \item{type}{class of object to look for. See Details}
 }
 \description{
-This function will search the \code{.instrument} environment for objects of
+This function will search the \code{.event} environment for objects of
 class \code{type}, using first the \code{primary_id} and then any
-\code{identifiers} to locate the instrument.  Finally, it will try adding 1
+\code{identifiers} to locate the event.  Finally, it will try adding 1
 and then 2 dots to the beginning of the \code{primary_id} to see if an
-instrument was stored there to avoid naming conflicts.
+event was stored there to avoid naming conflicts.
 }
 \details{
 \code{\link{future}} and \code{\link{option}} objects may have a primary_id
 that begins with 1 or 2 dots (in order to avoid naming conflics).  For
-example, the root specs for options (or futures) on the stock with ticker
+example, the root specs for options (or futures) on the auction with ticker
 "SPY" may be stored with a primary_id of "SPY", ".SPY", or "..SPY".
 \code{getEvent} will try using each possible \code{primary_id}
-until it finds an instrument of the appropriate \code{type}
+until it finds an event of the appropriate \code{type}
 }
 \examples{
 \dontrun{
 option('..VX', multiplier=100,
   underlying_id=future('.VX',multiplier=1000,
-    underlying_id=synthetic('VIX', currency("USD"))))
+    underlying_id=synthetic('VIX', region("USD"))))
 
 getEvent("VIX")
 getEvent('VX') #returns the future

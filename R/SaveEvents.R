@@ -38,18 +38,18 @@
 #' @param compress argument passed to \code{\link{save}}, default is "gzip"
 #' @return Called for side-effect
 #' @author Gei Lin
-#' @seealso save, load load.instrument define_stocks, define_futures,
+#' @seealso save, load load.instrument define_auctions, define_futures,
 #' define_options (option_series.yahoo)
 #' @examples
 #' \dontrun{
-#' stock("SPY", currency("USD"), 1)
+#' Auction("US.10YR.FIX", Region("US"), 1)
 #' tmpdir <- tempdir()
 #' saveEvents("MyEvents.RData", dir=tmpdir)
-#' rm_events(keep.currencies=FALSE)
+#' rm_events(keep.regions=FALSE)
 #' loadEvents("MyEvents.RData", dir=tmpdir)
 #' # write .R file that can be sourced
 #' saveEvents("MyEvents.R", dir=tmpdir)
-#' rm_events(keep.currencies=FALSE)
+#' rm_events(keep.regions=FALSE)
 #' loadEvents("MyEvents.R", dir=tmpdir)
 #' #source(file=paste(tmpdir, "MyEvents.R", sep="/")) # same
 #' unlink(tmpdir, recursive=TRUE)
@@ -126,6 +126,6 @@ loadEvents <-function(file_name="MyEvents", dir="") {
 #' @export
 #' @rdname saveEvents
 reloadEvents <- function(file_name="MyEvents", dir="") {
-  rm_events(keep.currencies=FALSE)
+  rm_events(keep.regions=FALSE)
   loadEvents(file_name=file_name, dir=dir)
 }

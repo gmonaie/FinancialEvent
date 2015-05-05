@@ -2,114 +2,70 @@
 % Please edit documentation in R/ls_events.R
 \name{ls_events}
 \alias{ls_FX}
-\alias{ls_ICS}
-\alias{ls_ICS_roots}
+\alias{ls_auctions}
 \alias{ls_bonds}
 \alias{ls_calls}
-\alias{ls_currencies}
 \alias{ls_derivatives}
+\alias{ls_ecodata}
 \alias{ls_events}
 \alias{ls_exchange_rates}
 \alias{ls_funds}
 \alias{ls_future_series}
 \alias{ls_futures}
 \alias{ls_guaranteed_spreads}
-\alias{ls_non_currencies}
 \alias{ls_non_derivatives}
+\alias{ls_non_regions}
+\alias{ls_opencloses}
 \alias{ls_option_series}
 \alias{ls_options}
+\alias{ls_policies}
 \alias{ls_puts}
+\alias{ls_regions}
 \alias{ls_spreads}
-\alias{ls_stocks}
 \alias{ls_synthetics}
 \alias{rm_FX}
+\alias{rm_auctions}
 \alias{rm_bonds}
-\alias{rm_currencies}
 \alias{rm_derivatives}
+\alias{rm_ecodata}
 \alias{rm_events}
 \alias{rm_exchange_rates}
 \alias{rm_funds}
 \alias{rm_future_series}
 \alias{rm_futures}
 \alias{rm_non_derivatives}
+\alias{rm_opencloses}
 \alias{rm_option_series}
 \alias{rm_options}
+\alias{rm_policies}
+\alias{rm_regions}
 \alias{rm_spreads}
-\alias{rm_stocks}
 \alias{rm_synthetics}
 \title{List or Remove event objects}
 \usage{
 ls_events(pattern = NULL, match = TRUE, verbose = TRUE)
 
-ls_stocks(pattern = NULL, match = TRUE)
+ls_auctions(pattern = NULL, match = TRUE)
 
-ls_options(pattern = NULL, match = TRUE, include.series = TRUE)
+ls_regions(pattern = NULL, match = TRUE, includeFX = FALSE)
 
-ls_option_series(pattern = NULL, match = TRUE)
+ls_non_regions(pattern = NULL, match = TRUE, includeFX = TRUE)
 
-ls_futures(pattern = NULL, match = TRUE, include.series = TRUE)
+ls_policies(pattern = NULL, match = TRUE)
 
-ls_future_series(pattern = NULL, match = TRUE)
+ls_ecodata(pattern = NULL, match = TRUE)
 
-ls_currencies(pattern = NULL, match = TRUE, includeFX = FALSE)
+ls_opencloses(pattern = NULL, match = TRUE)
 
-ls_non_currencies(pattern = NULL, match = TRUE, includeFX = TRUE)
+rm_events(x, keep.regions = TRUE)
 
-ls_exchange_rates(pattern = NULL, match = TRUE)
+rm_auctions(x)
 
-ls_FX(pattern = NULL, match = TRUE)
+rm_policies(x)
 
-ls_bonds(pattern = NULL, match = TRUE)
+rm_ecodata(x)
 
-ls_funds(pattern = NULL, match = TRUE)
-
-ls_spreads(pattern = NULL, match = TRUE)
-
-ls_guaranteed_spreads(pattern = NULL, match = TRUE)
-
-ls_synthetics(pattern = NULL, match = TRUE)
-
-ls_ICS(pattern = NULL, match = TRUE)
-
-ls_ICS_roots(pattern = NULL, match = TRUE)
-
-ls_derivatives(pattern = NULL, match = TRUE)
-
-ls_non_derivatives(pattern = NULL, match = TRUE)
-
-ls_calls(pattern = NULL, match = TRUE)
-
-ls_puts(pattern = NULL, match = TRUE)
-
-rm_events(x, keep.currencies = TRUE)
-
-rm_stocks(x)
-
-rm_options(x)
-
-rm_option_series(x)
-
-rm_futures(x)
-
-rm_future_series(x)
-
-rm_currencies(x)
-
-rm_exchange_rates(x)
-
-rm_FX(x)
-
-rm_bonds(x)
-
-rm_funds(x)
-
-rm_spreads(x)
-
-rm_synthetics(x)
-
-rm_derivatives(x)
-
-rm_non_derivatives(x, keep.currencies = TRUE)
+rm_opencloses(x)
 }
 \arguments{
 \item{pattern}{an optional regular expression.  Only names matching
@@ -119,25 +75,25 @@ rm_non_derivatives(x, keep.currencies = TRUE)
 
 \item{verbose}{be verbose?}
 
-\item{include.series}{should future_series or option_series events be
-included.}
-
-\item{includeFX}{should exchange_rates be included in ls_non_currencies
+\item{includeFX}{should exchange_rates be included in ls_non_regions
 results}
 
 \item{x}{what to remove. if not supplied all events of relevent class
 will be removed.  For \code{ls_defined.by} x is the string describing how the
 event was defined.}
 
-\item{keep.currencies}{If TRUE, currencies will not be deleted.}
+\item{keep.regions}{If TRUE, regions will not be deleted.}
+
+\item{include.series}{should future_series or option_series events be
+included.}
 }
 \value{
 ls functions return vector of character strings corresponding to
 events of requested type rm functions are called for side-effect
 }
 \description{
-display the names of or delete events, stocks, options, futures,
-currencies, bonds, funds, spreads, guaranteed_spreads, synthetics,
+display the names of or delete events, auctions, options, futures,
+regions, bonds, funds, spreads, guaranteed_spreads, synthetics,
 derivatives, or non-derivatives.
 }
 \details{
@@ -145,8 +101,8 @@ ls functions return the names of all the events of the class implied by
 the function name. rm functions remove the events of the class implied
 by the function name
 
-rm_events and rm_non_derivatives will not delete currencies unless the
-keep.currencies argument is FALSE.
+rm_events and rm_non_derivatives will not delete regions unless the
+keep.regions argument is FALSE.
 
 For the rm functions, x can be a vector of event names, or nothing.  If
 \code{x} is missing, all events of the relevant type will be removed.
@@ -156,12 +112,12 @@ denominated in USD.
 }
 \examples{
 \dontrun{
-#rm_events(keep.currencies=FALSE) #remove everything from .event
+#rm_events(keep.regions=FALSE) #remove everything from .event
 
 # First, create some events
-currency(c("USD", "EUR", "JPY"))
-#stocks
-stock(c("S", "SE", "SEE", "SPY"), 'USD')
+region(c("USD", "EUR", "JPY"))
+#auctions
+auction(c("S", "SE", "SEE", "SPY"), 'USD')
 synthetic("SPX", "USD", src=list(src='yahoo', name='^GSPC'))
 #derivatives
 option('.SPY', 'USD', multiplier=100, underlying_id='SPY')
@@ -173,11 +129,11 @@ option('.ES','USD',multiplier=1, expires='2011-06',strike=1350, right='C', under
 
 # Now, the examples
 ls_events() #all events
-ls_events("SE") #only the one stock
+ls_events("SE") #only the one auction
 ls_events("S", match=FALSE) #anything with "S" in name
 
-ls_currencies()
-ls_stocks()
+ls_regions()
+ls_auctions()
 ls_options()
 ls_futures()
 ls_derivatives()
@@ -190,13 +146,13 @@ rm_options('SPY_110618C130')
 rm_futures()
 ls_events()
 #rm_events('EUR') #Incorrect
-rm_events('EUR', keep.currencies=FALSE) #remove the currency
-rm_currencies('JPY') #or remove currency like this
-ls_currencies()
+rm_events('EUR', keep.regions=FALSE) #remove the region
+rm_regions('JPY') #or remove region like this
+ls_regions()
 ls_events()
 
-rm_events() #remove all but currencies
-rm_currencies()
+rm_events() #remove all but regions
+rm_regions()
 
 option_series.yahoo('DIA')
 ls_events_by('underlying_id','DIA') #underlying_id must exactly match 'DIA'
@@ -208,7 +164,7 @@ rm_events()
 Garrett See
 }
 \seealso{
-ls_events_by, ls_by_currency, ls_by_expiry, ls, rm,
-event, stock, future, option, currency, FinancialInstrument::sort_ids
+ls_events_by, ls_by_region, ls_by_expiry, ls, rm,
+event, auction, future, option, region, FinancialInstrument::sort_ids
 }
 

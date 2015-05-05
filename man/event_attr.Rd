@@ -32,7 +32,7 @@ name of \code{value} and the old event will be removed.)
 If the \code{attr} you are changing is \dQuote{type}, the event will be
 reclassed with that type. If \code{attr} is \dQuote{src}, \code{value} will
 be used in a call to \code{setSymbolLookup}.  Other checks are in place to
-make sure that \dQuote{currency} remains a \code{\link{currency}} object and
+make sure that \dQuote{region} remains a \code{\link{region}} object and
 that \dQuote{multiplier} and \dQuote{tick_size} can only be changed to
 reasonable values.
 
@@ -48,8 +48,8 @@ You can remove an attribute/level from an event by calling this
 }
 \examples{
 \dontrun{
-currency("USD")
-stock("SPY","USD")
+region("USD")
+auction("SPY","USD")
 event_attr("USD","description","U.S. Dollar")
 event_attr("SPY", "description", "An ETF")
 getEvent("USD")

@@ -11,16 +11,16 @@
 
 #' List or Remove event objects
 #'
-#' display the names of or delete events, stocks, options, futures,
-#' currencies, bonds, funds, spreads, guaranteed_spreads, synthetics,
+#' display the names of or delete events, auctions, options, futures,
+#' regions, bonds, funds, spreads, guaranteed_spreads, synthetics,
 #' derivatives, or non-derivatives.
 #'
 #' ls functions return the names of all the events of the class implied by
 #' the function name. rm functions remove the events of the class implied
 #' by the function name
 #'
-#' rm_events and rm_non_derivatives will not delete currencies unless the
-#' keep.currencies argument is FALSE.
+#' rm_events and rm_non_derivatives will not delete regions unless the
+#' keep.regions argument is FALSE.
 #'
 #' For the rm functions, x can be a vector of event names, or nothing.  If
 #' \code{x} is missing, all events of the relevant type will be removed.
@@ -28,11 +28,11 @@
 #' It can be useful to nest these functions to get things like futures
 #' denominated in USD.
 #'
-#' @aliases ls_events ls_stocks ls_options ls_option_series ls_futures
-#' ls_future_series ls_currencies ls_non_currencies ls_exchange_rates ls_FX
+#' @aliases ls_events ls_auctions ls_options ls_option_series ls_futures
+#' ls_future_series ls_regions ls_non_regions ls_exchange_rates ls_FX
 #' ls_bonds ls_funds ls_spreads ls_guaranteed_spreads ls_synthetics
-#' ls_derivatives ls_non_derivatives ls_calls ls_puts rm_events rm_stocks
-#' rm_options rm_option_series rm_futures rm_future_series rm_currencies
+#' ls_derivatives ls_non_derivatives ls_calls ls_puts rm_events rm_auctions
+#' rm_options rm_option_series rm_futures rm_future_series rm_regions
 #' rm_exchange_rates rm_FX rm_bonds rm_funds rm_spreads rm_synthetics
 #' rm_derivatives rm_non_derivatives
 #' @param pattern an optional regular expression.  Only names matching
@@ -44,23 +44,23 @@
 #' @param x what to remove. if not supplied all events of relevent class
 #' will be removed.  For \code{ls_defined.by} x is the string describing how the
 #' event was defined.
-#' @param keep.currencies If TRUE, currencies will not be deleted.
-#' @param includeFX should exchange_rates be included in ls_non_currencies
+#' @param keep.regions If TRUE, regions will not be deleted.
+#' @param includeFX should exchange_rates be included in ls_non_regions
 #' results
 #' @return ls functions return vector of character strings corresponding to
 #' events of requested type rm functions are called for side-effect
 #' @author Garrett See
-#' @seealso ls_events_by, ls_by_currency, ls_by_expiry, ls, rm,
-#' event, stock, future, option, currency, FinancialInstrument::sort_ids
+#' @seealso ls_events_by, ls_by_region, ls_by_expiry, ls, rm,
+#' event, auction, future, option, region, FinancialInstrument::sort_ids
 #' @examples
 #'
 #' \dontrun{
-#' #rm_events(keep.currencies=FALSE) #remove everything from .event
+#' #rm_events(keep.regions=FALSE) #remove everything from .event
 #'
 #' # First, create some events
-#' currency(c("USD", "EUR", "JPY"))
-#' #stocks
-#' stock(c("S", "SE", "SEE", "SPY"), 'USD')
+#' region(c("USD", "EUR", "JPY"))
+#' #auctions
+#' auction(c("S", "SE", "SEE", "SPY"), 'USD')
 #' synthetic("SPX", "USD", src=list(src='yahoo', name='^GSPC'))
 #' #derivatives
 #' option('.SPY', 'USD', multiplier=100, underlying_id='SPY')
@@ -72,11 +72,11 @@
 #'
 #' # Now, the examples
 #' ls_events() #all events
-#' ls_events("SE") #only the one stock
+#' ls_events("SE") #only the one auction
 #' ls_events("S", match=FALSE) #anything with "S" in name
 #'
-#' ls_currencies()
-#' ls_stocks()
+#' ls_regions()
+#' ls_auctions()
 #' ls_options()
 #' ls_futures()
 #' ls_derivatives()
@@ -89,13 +89,13 @@
 #' rm_futures()
 #' ls_events()
 #' #rm_events('EUR') #Incorrect
-#' rm_events('EUR', keep.currencies=FALSE) #remove the currency
-#' rm_currencies('JPY') #or remove currency like this
-#' ls_currencies()
+#' rm_events('EUR', keep.regions=FALSE) #remove the region
+#' rm_regions('JPY') #or remove region like this
+#' ls_regions()
 #' ls_events()
 #'
-#' rm_events() #remove all but currencies
-#' rm_currencies()
+#' rm_events() #remove all but regions
+#' rm_regions()
 #'
 #' option_series.yahoo('DIA')
 #' ls_events_by('underlying_id','DIA') #underlying_id must exactly match 'DIA'
@@ -129,12 +129,12 @@ ls_events <- function(pattern=NULL, match=TRUE, verbose=TRUE) {
 
 #' @export
 #' @rdname ls_events
-ls_stocks <- function(pattern=NULL,match=TRUE) {
+ls_auctions <- function(pattern=NULL,match=TRUE) {
   symbols <- ls_events(pattern,match)
   tmp_symbols <- NULL
   for (instr in symbols) {
     tmp_instr <- try(get(instr, pos = .event),silent=TRUE)
-    if (inherits(tmp_instr, 'stock') && inherits(tmp_instr, 'event')) {
+    if (inherits(tmp_instr, 'auction') && inherits(tmp_instr, 'event')) {
       tmp_symbols <- c(tmp_symbols,instr)
     }
   }
@@ -143,71 +143,13 @@ ls_stocks <- function(pattern=NULL,match=TRUE) {
 
 #' @export
 #' @rdname ls_events
-ls_options <- function(pattern=NULL,match=TRUE, include.series=TRUE) {
-  symbols <- ls_events(pattern,match)
-  tmp_symbols <- NULL
-  for (instr in symbols) {
-    tmp_instr <- try(get(instr, pos = .event),silent=TRUE)
-    if (inherits(tmp_instr, 'option') && inherits(tmp_instr, 'event')) {
-      if (!inherits(tmp_instr, 'option_series') || include.series)
-        tmp_symbols <- c(tmp_symbols,instr)
-    }
-  }
-  tmp_symbols
-}
-
-#' @export
-#' @rdname ls_events
-ls_option_series <- function(pattern=NULL,match=TRUE) {
-  symbols <- ls_events(pattern,match)
-  tmp_symbols <- NULL
-  for (instr in symbols) {
-    tmp_instr <- try(get(instr, pos = .event),silent=TRUE)
-    if (inherits(tmp_instr, 'option_series') && inherits(tmp_instr, 'event')) {
-      tmp_symbols <- c(tmp_symbols,instr)
-    }
-  }
-  tmp_symbols
-}
-
-#' @export
-#' @rdname ls_events
-ls_futures <- function(pattern=NULL,match=TRUE, include.series=TRUE) {
-  symbols <- ls_events(pattern,match)
-  tmp_symbols <- NULL
-  for (instr in symbols) {
-    tmp_instr <- try(get(instr, pos = .event),silent=TRUE)
-    if (inherits(tmp_instr, 'future') && inherits(tmp_instr, 'event')) {
-      if (!inherits(tmp_instr, 'future_series') || include.series)
-        tmp_symbols <- c(tmp_symbols,instr)
-    }
-  }
-  tmp_symbols
-}
-
-#' @export
-#' @rdname ls_events
-ls_future_series <- function(pattern=NULL,match=TRUE) {
-  symbols <- ls_events(pattern,match)
-  tmp_symbols <- NULL
-  for (instr in symbols) {
-    tmp_instr <- try(get(instr, pos = .event),silent=TRUE)
-    if (inherits(tmp_instr, 'future_series') && inherits(tmp_instr, 'event')) {
-      tmp_symbols <- c(tmp_symbols,instr)
-    }
-  }
-  tmp_symbols
-}
-
-#' @export
-#' @rdname ls_events
-ls_currencies <- function(pattern=NULL, match=TRUE, includeFX=FALSE) {
+ls_regions <- function(pattern=NULL, match=TRUE, includeFX=FALSE) {
   symbols <- ls_events(pattern=pattern, match=match)
   tmp_symbols <- NULL
   for (instr in symbols) {
     tmp_instr <- try(get(instr, pos = .event),
                      silent=TRUE)
-    if (inherits(tmp_instr, 'currency')
+    if (inherits(tmp_instr, 'region')
         && inherits(tmp_instr, 'event')) {
       if (!inherits(tmp_instr, 'exchange_rate') || isTRUE(includeFX)) {
         tmp_symbols <- c(tmp_symbols,instr)
@@ -219,13 +161,13 @@ ls_currencies <- function(pattern=NULL, match=TRUE, includeFX=FALSE) {
 
 #' @export
 #' @rdname ls_events
-ls_non_currencies <- function(pattern=NULL, match=TRUE, includeFX=TRUE) {
+ls_non_regions <- function(pattern=NULL, match=TRUE, includeFX=TRUE) {
   symbols <- ls_events(pattern, match)
   tmp_symbols <- NULL
   for (instr in symbols) {
     tmp_instr <- try(get(instr, pos = .event),
                      silent=TRUE)
-    if (!inherits(tmp_instr, 'currency') ||
+    if (!inherits(tmp_instr, 'region') ||
           (inherits(tmp_instr, 'exchange_rate') && includeFX) ) {
       tmp_symbols <- c(tmp_symbols,instr)
     }
@@ -235,32 +177,12 @@ ls_non_currencies <- function(pattern=NULL, match=TRUE, includeFX=TRUE) {
 
 #' @export
 #' @rdname ls_events
-ls_exchange_rates <- function(pattern=NULL, match=TRUE) {
-  symbols <- ls_currencies(pattern=pattern, match=match, includeFX=TRUE)
-  tmp_symbols <- NULL
-  for (instr in symbols) {
-    tmp_instr <- try(get(instr, pos = .event),
-                     silent=TRUE)
-    if (inherits(tmp_instr, 'exchange_rate')
-        && inherits(tmp_instr, 'event')) {
-      tmp_symbols <- c(tmp_symbols,instr)
-    }
-  }
-  tmp_symbols
-}
-
-#' @export
-#' @rdname ls_events
-ls_FX <- ls_exchange_rates
-
-#' @export
-#' @rdname ls_events
-ls_bonds <- function(pattern=NULL,match=TRUE) {
+ls_policies <- function(pattern=NULL,match=TRUE) {
   symbols <- ls_events(pattern,match)
   tmp_symbols <- NULL
   for (instr in symbols) {
     tmp_instr <- try(get(instr, pos = .event),silent=TRUE)
-    if (inherits(tmp_instr, 'bond') && inherits(tmp_instr, 'event')) {
+    if (inherits(tmp_instr, 'policy') && inherits(tmp_instr, 'event')) {
       tmp_symbols <- c(tmp_symbols,instr)
     }
   }
@@ -269,12 +191,12 @@ ls_bonds <- function(pattern=NULL,match=TRUE) {
 
 #' @export
 #' @rdname ls_events
-ls_funds <- function(pattern=NULL,match=TRUE) {
+ls_ecodata <- function(pattern=NULL,match=TRUE) {
   symbols <- ls_events(pattern,match)
   tmp_symbols <- NULL
   for (instr in symbols) {
     tmp_instr <- try(get(instr, pos = .event),silent=TRUE)
-    if (inherits(tmp_instr, 'fund') && inherits(tmp_instr, 'event')) {
+    if (inherits(tmp_instr, 'ecodata') && inherits(tmp_instr, 'event')) {
       tmp_symbols <- c(tmp_symbols,instr)
     }
   }
@@ -283,213 +205,31 @@ ls_funds <- function(pattern=NULL,match=TRUE) {
 
 #' @export
 #' @rdname ls_events
-ls_spreads <- function(pattern=NULL,match=TRUE) {
+ls_opencloses <- function(pattern=NULL,match=TRUE) {
   symbols <- ls_events(pattern,match)
   tmp_symbols <- NULL
   for (instr in symbols) {
     tmp_instr <- try(get(instr, pos = .event),silent=TRUE)
-    if (inherits(tmp_instr, 'spread') && inherits(tmp_instr, 'event')) {
+    if (inherits(tmp_instr, 'openclose') && inherits(tmp_instr, 'event')) {
       tmp_symbols <- c(tmp_symbols,instr)
     }
   }
   tmp_symbols
 }
-
-#' @export
-#' @rdname ls_events
-ls_guaranteed_spreads <- function(pattern=NULL,match=TRUE) {
-  symbols <- ls_events(pattern,match)
-  tmp_symbols <- NULL
-  for (instr in symbols) {
-    tmp_instr <- try(get(instr, pos = .event),silent=TRUE)
-    if (inherits(tmp_instr, 'guaranteed_spread') && inherits(tmp_instr, 'event')) {
-      tmp_symbols <- c(tmp_symbols,instr)
-    }
-  }
-  tmp_symbols
-}
-
-#' @export
-#' @rdname ls_events
-ls_synthetics <- function(pattern=NULL, match=TRUE) {
-  symbols <- ls_events(pattern,match)
-  tmp_symbols <- NULL
-  for (instr in symbols) {
-    tmp_instr <- try(get(instr, pos = .event),silent=TRUE)
-    if (inherits(tmp_instr, 'synthetic') && inherits(tmp_instr, 'event')) {
-      tmp_symbols <- c(tmp_symbols,instr)
-    }
-  }
-  tmp_symbols
-}
-
-#' @export
-#' @rdname ls_events
-ls_ICS <- function(pattern=NULL, match=TRUE) {
-  symbols <- ls_events(pattern,match)
-  tmp_symbols <- NULL
-  for (instr in symbols) {
-    tmp_instr <- try(get(instr, pos = .event),silent=TRUE)
-    if (inherits(tmp_instr, 'ICS') && inherits(tmp_instr, 'event')) {
-      tmp_symbols <- c(tmp_symbols,instr)
-    }
-  }
-  tmp_symbols
-}
-
-#' @export
-#' @rdname ls_events
-ls_ICS_roots <- function(pattern=NULL, match=TRUE) {
-  symbols <- ls_events(pattern,match)
-  tmp_symbols <- NULL
-  for (instr in symbols) {
-    tmp_instr <- try(get(instr, pos = .event),silent=TRUE)
-    if (inherits(tmp_instr, 'ICS_root') && inherits(tmp_instr, 'event')) {
-      tmp_symbols <- c(tmp_symbols,instr)
-    }
-  }
-  tmp_symbols
-}
-
-# should it be ls_yahoo, ls_defined.by.yahoo, or ls_src? something else?
-#ls_yahoo <- function(pattern=NULL) {
-#events defined by yahoo
-#    symbols <- ls_events(pattern) #TODO: other functions should be updated to get symbols like this too
-#    tmp_symbols <- NULL
-#    for (instr in symbols) {
-#        tmp_instr <- try(get(instr, pos = .event),silent=TRUE)
-#        if ( is.event(tmp_instr) && !is.null(tmp_instr$defined.by) )  {
-#            dby <- unlist(strsplit( tmp_instr$defined.by,";"))
-#            if (any(dby == "yahoo" ))
-#                tmp_symbols <- c(tmp_symbols, instr)
-#        }
-#    }
-#    tmp_symbols
-#}
-
-#ls_IB <- function(pattern=NULL) {
-#events defined by IB
-#    symbols <- ls_events(pattern)
-#    tmp_symbols <- NULL
-#    for (instr in symbols) {
-#        tmp_instr <- try(get(instr, pos = .event),silent=TRUE)
-#        if ( is.event(tmp_instr) && !is.null(tmp_instr$defined.by) )  {
-#            dby <- unlist(strsplit( tmp_instr$defined.by,";"))
-#            if (any(dby == "IB" )) tmp_symbols <- c(tmp_symbols,instr)
-#        }
-#    }
-#    tmp_symbols
-#}
-
-
-#ls_defined.by <- function(x, pattern=NULL) {
-#  symbols <- ls_events(pattern)
-#	tmp_symbols <- NULL
-#	for (symbol in symbols) {
-#		tmp_instr <- try(get(symbol, pos=.event),silent=TRUE)
-#		if (is.event(tmp_instr) && !is.null(tmp_instr$defined.by) ) {
-#			dby <- unlist(strsplit( tmp_instr$defined.by,";"))
-#			if (any(dby == x)) tmp_symbols <- c(tmp_symbols,symbol)
-#		}
-#	}
-#	tmp_symbols
-#}
-
-#' @export
-#' @rdname ls_events
-ls_derivatives <- function(pattern=NULL,match=TRUE) {
-  symbols <- ls_events(pattern,match)
-  #there is currently no derivative class
-  #but check for it in case someone made one
-  tmp_symbols <- NULL
-  for (instr in symbols) {
-    tmp_instr <- try(get(instr, pos = .event),silent=TRUE)
-    if (inherits(tmp_instr, 'derivative') ||
-          inherits(tmp_instr, 'option') ||
-          inherits(tmp_instr, 'future') ) {
-      tmp_symbols <- c(tmp_symbols,instr)
-    }
-  }
-  tmp_symbols
-}
-
-#' @export
-#' @rdname ls_events
-ls_non_derivatives <- function(pattern=NULL,match=TRUE) {
-  symbols <- ls_events(pattern,match)
-  #there is currently no derivative class
-  #but check for it in case someone made one
-  tmp_symbols <- NULL
-  for (instr in symbols) {
-    tmp_instr <- try(get(instr, pos = .event),silent=TRUE)
-    if (!inherits(tmp_instr, 'derivative') &&
-          !inherits(tmp_instr, 'option') &&
-          !inherits(tmp_instr, 'future') ) {
-      tmp_symbols <- c(tmp_symbols,instr)
-    }
-  }
-  tmp_symbols
-}
-
-
-#' @export
-#' @rdname ls_events
-ls_calls <- function(pattern=NULL,match=TRUE) {
-  symbols <- ls_options(pattern=pattern,match=match)
-  tmp_symbols <- NULL
-  for (instr in symbols) {
-    tmp_instr <- try(get(instr, pos = .event),silent=TRUE)
-    if (is.event(tmp_instr) && inherits(tmp_instr, 'option')) {
-      if (!is.null(tmp_instr$callput)) {
-        right <- tmp_instr$callput
-      }else if(!is.null(tmp_instr$right)) {
-        right <- tmp_instr$right
-      } else right <- FALSE
-      if (right == "C" || right == "Call" ||
-            right == "call" || right == "c") {
-        tmp_symbols <- c(tmp_symbols,instr)
-      }
-    }
-  }
-  tmp_symbols
-}
-
-#' @export
-#' @rdname ls_events
-ls_puts <- function(pattern=NULL,match=TRUE) {
-  symbols <- ls_options(pattern=pattern,match=match)
-  tmp_symbols <- NULL
-  for (instr in symbols) {
-    tmp_instr <- try(get(instr, pos = .event),silent=TRUE)
-    if (is.event(tmp_instr) && inherits(tmp_instr, 'option')) {
-      if (!is.null(tmp_instr$callput)) {
-        right <- tmp_instr$callput
-      }else if(!is.null(tmp_instr$right)) {
-        right <- tmp_instr$right
-      } else right <- FALSE
-      if (right == "P" || right == "Put" ||
-            right == "put" || right == "p") {
-        tmp_symbols <- c(tmp_symbols,instr)
-      }
-    }
-  }
-  tmp_symbols
-}
-
 
 #TODO: add error checking: check to see if .event exists
 
 #' @export
 #' @rdname ls_events
-rm_events <- function(x, keep.currencies=TRUE) {
+rm_events <- function(x, keep.regions=TRUE) {
   if (missing(x)) {
     x <- ls_events()
   }
-  if (keep.currencies && !is.null(x)) {
-    if(any(is.na(match(x,ls_currencies())))) { #are any of them not a currency
-      if (!all(is.na(match(x,ls_currencies())))) #are some of them a currency
-        x <- x[!x %in% ls_currencies()] #then take them out of to-be-removed
-    } else stop('Use keep.currencies=FALSE to delete a currency')
+  if (keep.regions && !is.null(x)) {
+    if(any(is.na(match(x,ls_regions())))) { #are any of them not a region
+      if (!all(is.na(match(x,ls_regions())))) #are some of them a region
+        x <- x[!x %in% ls_regions()] #then take them out of to-be-removed
+    } else stop('Use keep.regions=FALSE to delete a region')
   }
 
   rm(list=x,pos=.event)
@@ -497,128 +237,36 @@ rm_events <- function(x, keep.currencies=TRUE) {
 
 #' @export
 #' @rdname ls_events
-rm_stocks <- function(x) {
+rm_auctions <- function(x) {
   if (missing(x)) {
-    x <- ls_stocks()
+    x <- ls_auctions()
   }
-  rm(list=x[x %in% ls_stocks()], pos=.event)
+  rm(list=x[x %in% ls_auctions()], pos=.event)
 }
 
 #' @export
 #' @rdname ls_events
-rm_options <- function(x) {
+rm_policies <- function(x) {
   if (missing(x)) {
-    x <- ls_options()
+    x <- ls_policies()
   }
-  rm(list=x[x %in% ls_options()], pos=.event)
+  rm(list=x[x %in% ls_policies()], pos=.event)
 }
 
 #' @export
 #' @rdname ls_events
-rm_option_series <- function(x) {
+rm_ecodata <- function(x) {
   if (missing(x)) {
-    x <- ls_option_series()
+    x <- ls_ecodata()
   }
-  rm(list=x[x %in% ls_option_series()], pos=.event)
+  rm(list=x[x %in% ls_ecodata()], pos=.event)
 }
 
 #' @export
 #' @rdname ls_events
-rm_futures <- function(x) {
+rm_opencloses <- function(x) {
   if (missing(x)) {
-    x <- ls_futures()
+    x <- ls_opencloses()
   }
-  rm(list=x[x %in% ls_futures()], pos=.event)
-}
-
-#' @export
-#' @rdname ls_events
-rm_future_series <- function(x) {
-  if (missing(x)) {
-    x <- ls_future_series()
-  }
-  rm(list=x[x %in% ls_future_series()], pos=.event)
-}
-
-#' @export
-#' @rdname ls_events
-rm_currencies <- function(x) {
-  if (missing(x)) {
-    x <- ls_currencies()
-  }
-  rm(list=x[x %in% ls_currencies()], pos=.event)
-}
-
-#' @export
-#' @rdname ls_events
-rm_exchange_rates <- function(x) {
-  if (missing(x)) {
-    x <- ls_exchange_rates()
-  }
-  rm(list=x[x %in% ls_exchange_rates()], pos=.event)
-}
-
-#' @export
-#' @rdname ls_events
-rm_FX <- rm_exchange_rates
-
-#' @export
-#' @rdname ls_events
-rm_bonds <- function(x) {
-  if (missing(x)) {
-    x <- ls_bonds()
-  }
-  rm(list=x[x %in% ls_bonds()], pos=.event)
-}
-
-#' @export
-#' @rdname ls_events
-rm_funds <- function(x) {
-  if (missing(x)) {
-    x <- ls_funds()
-  }
-  rm(list=x[x %in% ls_funds()], pos=.event)
-}
-
-#' @export
-#' @rdname ls_events
-rm_spreads <- function(x) {
-  if (missing(x)) {
-    x <- ls_spreads()
-  }
-  rm(list=x[x %in% ls_spreads()], pos=.event)
-}
-
-#' @export
-#' @rdname ls_events
-rm_synthetics <- function(x) {
-  if (missing(x)) {
-    x <- ls_synthetics()
-  }
-  rm(list=x[x %in% ls_synthetics()],pos=.event)
-}
-
-
-#' @export
-#' @rdname ls_events
-rm_derivatives <- function(x) {
-  if (missing(x)) {
-    x <- ls_derivatives()
-  }
-  rm(list=x[x %in% ls_derivatives()],pos=.event)
-}
-
-#' @export
-#' @rdname ls_events
-rm_non_derivatives <- function(x, keep.currencies=TRUE) {
-  if (missing(x)) {
-    x <- ls_non_derivatives()
-  }
-  if (keep.currencies && !is.null(x)) {
-    if(any(is.na(match(x,ls_currencies())))) { #are any of them not a currency
-      if (!all(is.na(match(x,ls_currencies())))) #are some of them a currency
-        x <- x[-match(ls_currencies(),x)] #then take them out of to-be-removed
-    } else stop('Use keep.currencies=FALSE to delete a currency')
-  }
-  rm(list=x[x %in% ls_non_derivatives()],pos=.event)
+  rm(list=x[x %in% ls_opencloses()], pos=.event)
 }

@@ -20,7 +20,7 @@ already has that identifier.
 }
 \examples{
 \dontrun{
-stock("XXX", currency("USD"))
+auction("XXX", region("USD"))
 add.identifier("XXX", yahoo="^XXX")
 getEvent("^XXX")
 add.identifier("^XXX", "x3")
