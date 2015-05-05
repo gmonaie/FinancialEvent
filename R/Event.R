@@ -625,7 +625,7 @@ addEventIdentifier <- function(primary_id, ...) {
 #' @seealso \code{\link{addEventIdentifier}}, \code{\link{event_attr}}
 #' @examples
 #' \dontrun{
-#' update_instruments.TTR("GS")
+#' update_events.TTR("GS")
 #' getEvent("GS")$defined.by #TTR
 #' addEventDefinedBy("GS", "gsee", "demo")
 #' addEventDefinedBy("GS", "gsee;demo") #same
