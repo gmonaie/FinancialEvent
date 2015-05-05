@@ -31,7 +31,6 @@ is.event.name <- function(x) {
 #' @param x object to test for type
 #' @export
 is.exchange <- function( x ) {
-  #  x<-getEvent(x, silent=TRUE) # Please use is.exchange.name if x is character
   inherits( x, "exchange" )
 }
 
@@ -45,10 +44,30 @@ is.exchange.name <- function( x ) {
          "exchange")
 }
 
+#' class test for object supposedly of type 'region'
+#' @param x object to test for type
+#' @export
+is.region <- function( x ) {
+  inherits( x, "region" )
+}
+
+#' check each element of a character vector to see if it is either the
+#' primary_id or an identifier of a \code{\link{exchange}}
+#' @param x character vector
+#' @export
+is.region.name <- function( x ) {
+  if (!is.character(x)) return(FALSE)
+  sapply(lapply(x, getEvent, type='region', silent=TRUE), inherits,
+         "region")
+}
+
 #' event class constructors
 #'
-#' All 'exchange' and 'session' events must be defined before instruments of other types
+#' All 'exchange' and 'session' events must be defined before events of other types
 #' may be defined.
+#'
+#' Regions must also be defined -- all events have a region attached including sessions
+#' E.g. US.CBTN is a based on the US region
 #'
 #' In \dots you may pass any other arbitrary instrument fields that will be used
 #' to create 'custom' fields.  S3 classes in \R are basically lists with a class
@@ -128,20 +147,20 @@ is.exchange.name <- function( x ) {
 #'   primary_id be overwritten? Default is TRUE. If FALSE, an error will be
 #'   thrown and the instrument will not be created.
 #' @aliases
-#' exchange
-#' session
-#' auction
-#' policy
-#' ecodata
-#' event
-#' eventinterval
+#' Exchange
+#' Session
+#' Auction
+#' Policy
+#' EcoData
+#' Event
+#' EventInterval
 #' @seealso
-#' \code{\link{exchange}},
-#' \code{\link{session}},
-#' \code{\link{auction}},
-#' \code{\link{policy}},
-#' \code{\link{ecodata}},
-#' \code{\link{eventinterval}},
+#' \code{\link{Exchange}},
+#' \code{\link{Session}},
+#' \code{\link{Auction}},
+#' \code{\link{Policy}},
+#' \code{\link{EcoData}},
+#' \code{\link{EventInterval}},
 #' \code{\link{load.events}}
 #' @export
 Event <- function(primary_id, ..., region, identifiers = NULL, type = NULL, assign_i = FALSE, overwrite = TRUE) {
@@ -215,7 +234,7 @@ Event <- function(primary_id, ..., region, identifiers = NULL, type = NULL, assi
 }
 
 #' @export
-#' @rdname event
+#' @rdname Event
 Auction <- function(primary_id, region, root_id = NULL, suffix_id = NULL, identifiers = NULL, assign_i = TRUE, overwrite = TRUE, ...,
                      underlying_id = NULL) {
   if (missing(primary_id))
@@ -254,7 +273,7 @@ Auction <- function(primary_id, region, root_id = NULL, suffix_id = NULL, identi
 }
 
 #' @export
-#' @rdname event
+#' @rdname Event
 EcoData <- function(primary_id, root_id = NULL, suffix_id = NULL, identifiers = NULL, assign_i = TRUE, overwrite = TRUE, ...,
                      underlying_id = NULL) {
   if (missing(primary_id))
@@ -292,14 +311,8 @@ EcoData <- function(primary_id, root_id = NULL, suffix_id = NULL, identifiers = 
         assign_i = assign_i)
 }
 
-# root_id = c("US", "EU", "JP")
-# suffix_id = "SPEECH" , "FOMC_MIN", "ECB_PC"
-# US_SPEECH
-# US_FOMC_MIN
-# EU_ECB_PC
-# root_id = "CA", suffix_id = "BOC_ANN"
 #' @export
-#' @rdname event
+#' @rdname Event
 Policy <- function(primary_id, root_id = NULL, suffix_id = NULL, identifiers = NULL, assign_i = TRUE, overwrite = TRUE, ...,
                     underlying_id = NULL) {
   if (missing(primary_id))
@@ -376,9 +389,260 @@ OpenClose <- function(primary_id, root_id = NULL, suffix_id = NULL, identifiers 
         assign_i = assign_i)
 }
 
+#' Primary accessor function for getting objects of class 'instrument'
+#'
+#' This function will search the \code{.instrument} environment for objects of
+#' class \code{type}, using first the \code{primary_id} and then any
+#' \code{identifiers} to locate the instrument.  Finally, it will try adding 1
+#' and then 2 dots to the beginning of the \code{primary_id} to see if an
+#' instrument was stored there to avoid naming conflicts.
+#'
+#' \code{\link{future}} and \code{\link{option}} objects may have a primary_id
+#' that begins with 1 or 2 dots (in order to avoid naming conflics).  For
+#' example, the root specs for options (or futures) on the stock with ticker
+#' "SPY" may be stored with a primary_id of "SPY", ".SPY", or "..SPY".
+#' \code{getEvent} will try using each possible \code{primary_id}
+#' until it finds an instrument of the appropriate \code{type}
+#' @param x String identifier of instrument to retrieve
+#' @param Dates date range to retrieve 'as of', may not currently be implemented
+#' @param silent if TRUE, will not warn on failure, default FALSE
+#' @param type class of object to look for. See Details
+#' @examples
+#' \dontrun{
+#' option('..VX', multiplier=100,
+#'   underlying_id=future('.VX',multiplier=1000,
+#'     underlying_id=synthetic('VIX', currency("USD"))))
+#'
+#' getEvent("VIX")
+#' getEvent('VX') #returns the future
+#' getEvent("VX",type='option')
+#' getEvent('..VX') #finds the option
+#' }
+#' @export
+#' @rdname getEvent
+getEvent <- function(x, Dates=NULL, silent=FALSE, type='event'){
+  tmp_instr <- try(get(x,pos=.event),silent=TRUE)
+  if(inherits(tmp_instr,"try-error") || !inherits(tmp_instr, type)){
+    xx <- make.names(x)
+    ## First, look to see if x matches any identifiers.
+    # unlist all instruments into a big named vector
+    ul.instr <- unlist(as.list(.event,
+                               all.names=TRUE))
+    # subset by names that include "identifiers"
+    ul.ident <- ul.instr[grep('identifiers', names(ul.instr))]
+    # if x (or make.names(x)) is in the identifiers subset, extract the
+    # primary_id from the name
+    tmpname <- ul.ident[ul.ident %in% unique(c(x, xx))]
+    # if x was not in ul.ident, tmpname will == named character(0)
+    if (length(tmpname) > 0) {
+      #primary_id is everything before .identifiers
+      id <- gsub("\\.identifiers.*", "", names(tmpname))
+      tmp_instr <- try(get(id, pos=.event),
+                       silent=TRUE)
+      if (inherits(tmp_instr, type)) {
+        #&& (x %in% tmp_instr$identifiers || x %in% make.names(tmp_instr$identifiers))
+        return(tmp_instr)
+      }
+    }
+    #If not found, see if it begins with dots (future or option root)
+    #Remove any dots at beginning of string and add them back 1 at a time
+    # to the beginning of id.
+    char.x <- strsplit(x, "")[[1]] # split x into vector of characters
+    x <- substr(x, grep("[^\\.]", char.x)[1], length(char.x)) # excluding leading dots
+    tmp_instr<-try(get(x,pos=.event),silent=TRUE)
+    if(!inherits(tmp_instr,type)) {
+      tmp_instr<-try(get(paste(".",x,sep=""),
+                         pos=.event),
+                     silent=TRUE)
+      if(!inherits(tmp_instr,type)) {
+        tmp_instr<-try(get(paste("..",x,sep=""),
+                           pos=.event),
+                       silent=TRUE)
+      }
+    }
+    if (inherits(tmp_instr, type)) return(tmp_instr)
+    if(!silent) warning(paste(type,x,"not found, please create it first."))
+    return(FALSE)
+  } else{
+    return(tmp_instr)
+  }
+  #TODO add Date support to event, to get the proper value given a specific date
+}
+
+
+#' Add or change an attribute of an event
+#'
+#' This function will add or overwrite the data stored in the specified slot of
+#' the specified event.
+#'
+#' If the \code{attr} you are trying to change is the \dQuote{primary_id,} the
+#' event will be renamed. (A copy of the event will be stored by the
+#' name of \code{value} and the old event will be removed.)
+#' If the \code{attr} you are changing is \dQuote{type}, the event will be
+#' reclassed with that type. If \code{attr} is \dQuote{src}, \code{value} will
+#' be used in a call to \code{setSymbolLookup}.  Other checks are in place to
+#' make sure that \dQuote{currency} remains a \code{\link{currency}} object and
+#' that \dQuote{multiplier} and \dQuote{tick_size} can only be changed to
+#' reasonable values.
+#'
+#' If \code{attr} is \dQuote{identifiers} and \code{value} is \code{NULL},
+#' \code{identifiers} will be set to \code{list()}.  If \code{value} is not a
+#' list, \code{\link{add.identifier}} will be called with \code{value}.
+#' \code{add.identifier} will convert \code{value} to a list and append it to
+#' the current \code{identifiers}
+#' @param primary_id primary_id of the event that will be updated
+#' @param attr Name of the slot that will be added or changed
+#' @param value What to assign to the \code{attr} slot of the \code{primary_id}
+#'   event
+#' @param ... arguments to pass to \code{getEvent}. For example,
+#'   \code{type} could be provided to allow for \code{primary_id} to be an
+#'   identifier that is shared by more that one event (of different types)
+#' @return called for side-effect
+#' @note You can remove an attribute/level from an event by calling this
+#'   function with \code{value=NULL}
+#' @examples
+#' \dontrun{
+#' currency("USD")
+#' stock("SPY","USD")
+#' event_attr("USD","description","U.S. Dollar")
+#' event_attr("SPY", "description", "An ETF")
+#' getEvent("USD")
+#' getEvent("SPY")
+#'
+#' #Call with value=NULL to remove an attribute
+#' event_attr("SPY", "description", NULL)
+#' getEvent("SPY")
+#'
+#' event_attr("SPY","primary_id","SPX") #move/rename it
+#' event_attr("SPX","type","synthetic") #re-class
+#' event_attr("SPX","src",list(src='yahoo',name='^GSPC')) #setSymbolLookup
+#' getSymbols("SPX") #knows where to look because the last line setSymbolLookup
+#' getEvent("SPX")
+#' }
+#' @export
+event_attr <- function(primary_id, attr, value, ...) {
+  instr <- try(getEvent(primary_id, silent=TRUE, ...))
+  if (inherits(instr, 'try-error') || !is.instrument(instr))
+    stop(paste('instrument ',primary_id,' must be defined first.',sep=''))
+  if (attr == 'primary_id') {
+    rm(list = primary_id, pos = .event)
+  } else if (attr == 'currency') {
+    if (!is.currency.name(value)) {
+      stop("currency ", value, " must be an object of type 'currency'")
+    }
+  } else if (attr == 'multiplier') {
+    if (!is.numeric(value) || length(value) > 1) {
+      stop("multiplier must be a single number")
+    }
+  } else if (attr == 'tick_size') {
+    if (!is.null(value) && (!is.numeric(value) || length(value) > 1)) {
+      stop("tick_size must be NULL or a single number")
+    }
+  } else if (attr == 'type') {
+    tclass <- unique(c(value, "instrument"))
+    class(instr) <- tclass
+  } else if (attr == 'IB') {
+    if (inherits(value, 'twsContract')) {
+      class(instr) <- unique(c(class(instr)[1], 'twsInstrument',
+                               class(instr)[-1]))
+    } else {
+      warning('non-twsContract assigned to $IB')
+      class(instr) <- class(instr)[!class(instr) %in% 'twsInstrument']
+    }
+  } else if (attr == 'src') {
+    sarg <- list()
+    sarg[[instr$primary_id]] <- value
+    setSymbolLookup(sarg)
+  } else if (attr == 'identifiers') {
+    if (length(value) == 0) {
+      value <- list()
+    } else if (!is.list(value)) {
+      #warning("identifiers must be a list. Appending current identifiers.")
+      # add.identifier will convert to list
+      return(add.identifier(primary_id, value))
+    }
+  }
+  instr[[attr]] <- value
+  assign(instr$primary_id, instr, pos=.event)
+}
+
+
+#' Add an identifier to an \code{instrument}
+#'
+#' Add an identifier to an \code{\link{instrument}} unless the instrument
+#' already has that identifier.
+#' @param primary_id primary_id of an \code{\link{instrument}}
+#' @param ... identifiers passed as regular named arguments.
+#' @return called for side-effect
+#' @author Garrett See
+#' @seealso \code{\link{event_attr}}
+#' @examples
+#' \dontrun{
+#' stock("XXX", currency("USD"))
+#' add.identifier("XXX", yahoo="^XXX")
+#' getEvent("^XXX")
+#' add.identifier("^XXX", "x3")
+#' all.equal(getEvent("x3"), getEvent("XXX")) #TRUE
+#' }
+#' @export
+add.identifier <- function(primary_id, ...) {
+  new.ids <- as.list(unlist(list(...)))
+  instr <- getEvent(primary_id)
+  if (!inherits(instr, "instrument")) {
+    stop(paste(primary_id, "is not a defined instrument"))
+  }
+  ids <- c(instr[["identifiers"]], new.ids)
+  if (all(is.null(names(ids)))) {
+    event_attr(primary_id, "identifiers", unique(ids))
+  } else event_attr(primary_id, "identifiers",
+                         ids[!(duplicated(unlist(ids)) & duplicated(names(ids)))])
+}
+
+
+#' Add a source to the defined.by field of an \code{instrument}
+#'
+#' Concatenate a string or strings (passed through dots) to the defined.by
+#' field of an instrument (separated by semi-colons).  Any duplicates will be
+#' removed.  See Details.
+#'
+#' If there is already a value for the \code{defined.by} attribute of the
+#' \code{primary_id} instrument, that string will be split on semi-colons and
+#' converted to a character vector.  That will be \code{c}ombined with any new
+#' strings (in \code{...}).  The unique value of this new vector will then
+#' be converted into a semi-colon delimited string that will be assigned to
+#' the \code{defined.by} attribute of the \code{primary_ids}' instruments
+#'
+#' Many functions that create or update instrument definitions will also add or
+#' update the value of the defined.by attribute of that instrument.  If an
+#' instrument has been updated by more than one function, it's \code{defined.by}
+#' attribute will likely be a semi-colon delimited string (e.g.
+#' \dQuote{TTR;yahoo}).
+#' @param primary_ids character vector of primary_ids of
+#'   \code{\link{instrument}}s
+#' @param ... strings, or character vector, or semi-colon delimited string.
+#' @return called for side-effect
+#' @author Gei Lin
+#' @seealso \code{\link{add.identifier}}, \code{\link{event_attr}}
+#' @examples
+#' \dontrun{
+#' update_instruments.TTR("GS")
+#' getEvent("GS")$defined.by #TTR
+#' add.defined.by("GS", "gsee", "demo")
+#' add.defined.by("GS", "gsee;demo") #same
+#' }
+#' @export
+add.defined.by <- function(primary_ids, ...) {
+  for(id in primary_ids) {
+    db <- getEvent(id)[["defined.by"]]
+    event_attr(id, "defined.by",
+                    paste(unique(c(unlist(strsplit(db, ";")),
+                                   unlist(strsplit(unlist(list(...)), ";")))), collapse=";"))
+  }
+}
+
 #' Event class print method
 #'
-#' @author Joshua Ulrich, Garrett See
+#' @author Gei Lin
 #' @keywords internal
 #' @export
 print.event <- function(x, ...) {
@@ -389,7 +653,7 @@ print.event <- function(x, ...) {
 
 #' Event class sort method
 #'
-#' @author Garrett See
+#' @author Gei Lin
 #' @keywords internal
 #' @export
 sort.event <- function(x, decreasing=FALSE, na.last=NA, ...) {
