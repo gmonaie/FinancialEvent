@@ -27,40 +27,6 @@ is.event.name <- function(x) {
          "event")
 }
 
-#' class test for object supposedly of type 'exchange'
-#' @param x object to test for type
-#' @export
-is.exchange <- function( x ) {
-  inherits( x, "exchange" )
-}
-
-#' check each element of a character vector to see if it is either the
-#' primary_id or an identifier of a \code{\link{exchange}}
-#' @param x character vector
-#' @export
-is.exchange.name <- function( x ) {
-  if (!is.character(x)) return(FALSE)
-  sapply(lapply(x, getEvent, type='exchange', silent=TRUE), inherits,
-         "exchange")
-}
-
-#' class test for object supposedly of type 'region'
-#' @param x object to test for type
-#' @export
-is.region <- function( x ) {
-  inherits( x, "region" )
-}
-
-#' check each element of a character vector to see if it is either the
-#' primary_id or an identifier of a \code{\link{exchange}}
-#' @param x character vector
-#' @export
-is.region.name <- function( x ) {
-  if (!is.character(x)) return(FALSE)
-  sapply(lapply(x, getEvent, type='region', silent=TRUE), inherits,
-         "region")
-}
-
 #' event class constructors
 #'
 #' All 'exchange' and 'session' events must be defined before events of other types
@@ -147,14 +113,11 @@ is.region.name <- function( x ) {
 #'   primary_id be overwritten? Default is TRUE. If FALSE, an error will be
 #'   thrown and the event will not be created.
 #' @aliases
-#' Region
-#' Exchange
 #' Session
 #' Auction
 #' Policy
 #' EcoData
 #' Event
-#' EventInterval
 #' @seealso
 #' \code{\link{Exchange}},
 #' \code{\link{Session}},
@@ -166,7 +129,7 @@ is.region.name <- function( x ) {
 #' @export
 Event <- function(primary_id, ..., region, identifiers = NULL, type = NULL, assign_i = FALSE, overwrite = TRUE) {
   if (is.null(primary_id)) {
-    stop("you must specify a primary_id for the eventinterval")
+    stop("you must specify a primary_id for the event")
   }
 
   raw_id <- primary_id
@@ -174,7 +137,8 @@ Event <- function(primary_id, ..., region, identifiers = NULL, type = NULL, assi
     primary_id <- substr(primary_id, 2, nchar(primary_id))
   }
   primary_id <- make.names(primary_id)
-  if (missing(region) || is.null(region)) {
+  if (missing(region) || is.null(region) || 
+        (!missing(region) && !is.region.name(region))) {
     stop("region ", region, " must be defined first")
   }
   if (!hasArg(identifiers) || is.null(identifiers))
@@ -232,6 +196,58 @@ Event <- function(primary_id, ..., region, identifiers = NULL, type = NULL, assi
     return(primary_id)
   }
   else return(tmpevent)
+}
+
+#' @export
+#' @rdname Event
+Exchange <- function(primary_id , region=NULL , multiplier=1 , tick_size=.01, 
+                  identifiers = NULL, assign_i=TRUE, overwrite=TRUE, ...){
+    if (is.null(region)) stop ("'region' is a required argument")
+    if (!isTRUE(overwrite) && isTRUE(assign_i) &&
+        any(in.use <- primary_id %in% (li <- ls_events()))) {
+        stop(paste(paste("In Exchange(...) : ",
+                          "overwrite is FALSE and primary_id", 
+                          if (sum(in.use) > 1) "s are" else " is", 
+                          " already in use:\n", sep=""),
+                   paste(intersect(primary_id, li), collapse=", ")), 
+             call.=FALSE)
+    }
+    if (length(primary_id) > 1) {
+        out <- sapply(primary_id, Exchange, region=region, 
+                      multiplier=multiplier, tick_size=tick_size, 
+                      identifiers=identifiers, assign_i=assign_i,
+                      ...=..., simplify=assign_i)
+        return(if (assign_i) unname(out) else out)
+    }
+    Event(primary_id=primary_id, region=region, multiplier=multiplier, 
+               tick_size=tick_size, identifiers = identifiers, ..., 
+               type="exchange", assign_i=assign_i)
+}
+
+#' @export
+#' @rdname Event
+Session <- function(primary_id , region=NULL , multiplier=1 , tick_size=.01, 
+                  identifiers = NULL, assign_i=TRUE, overwrite=TRUE, ...){
+    if (is.null(region)) stop ("'region' is a required argument")
+    if (!isTRUE(overwrite) && isTRUE(assign_i) &&
+        any(in.use <- primary_id %in% (li <- ls_events()))) {
+        stop(paste(paste("In Session(...) : ",
+                          "overwrite is FALSE and primary_id", 
+                          if (sum(in.use) > 1) "s are" else " is", 
+                          " already in use:\n", sep=""),
+                   paste(intersect(primary_id, li), collapse=", ")), 
+             call.=FALSE)
+    }
+    if (length(primary_id) > 1) {
+        out <- sapply(primary_id, Session, region=region, 
+                      multiplier=multiplier, tick_size=tick_size, 
+                      identifiers=identifiers, assign_i=assign_i,
+                      ...=..., simplify=assign_i)
+        return(if (assign_i) unname(out) else out)
+    }
+    Event(primary_id=primary_id, region=region, multiplier=multiplier, 
+               tick_size=tick_size, identifiers = identifiers, ..., 
+               type="session", assign_i=assign_i)
 }
 
 #' @export
@@ -337,62 +353,6 @@ OpenClose <- function(primary_id , region=NULL , multiplier=1 , tick_size=.01,
                tick_size=tick_size, identifiers = identifiers, ..., 
                type="openclose", assign_i=assign_i)
 }
-
-#' @export
-#' @rdname Event
-Region <- function(primary_id, identifiers = NULL, assign_i=TRUE, ...){
-    if (hasArg("overwrite")) {
-        if (!list(...)$overwrite && isTRUE(assign_i) &&
-            any(in.use <- primary_id %in% (li <- ls_events()))) {
-            stop(paste(paste("In Region(...) : ",
-                              "overwrite is FALSE and primary_id", 
-                              if (sum(in.use) > 1) "s are" else " is", 
-                              " already in use:\n", sep=""),
-                       paste(intersect(primary_id, li), collapse=", ")), 
-                call.=FALSE)
-        }
-    }
-    if (length(primary_id) > 1) {
-        out <- sapply(primary_id, region, identifiers=identifiers, 
-                      assign_i=assign_i, ...=..., simplify=assign_i)
-        return(if (assign_i) unname(out) else out)
-    }
-    if (is.null(identifiers)) identifiers <- list()
-    ccy <- try(getEvent(primary_id,type='region',silent=TRUE))
-    if (is.event(ccy)) {
-        if (length(identifiers) > 0) {
-            if (!is.list(identifiers)) identifiers <- list(identifiers)
-            for (nm in names(ccy$identifiers)[names(ccy$identifiers) %in% 
-                                              names(identifiers)]) {
-                ccy$identifiers[[nm]] <- identifiers[[nm]]
-            }
-            identifiers <- identifiers[names(identifiers)[!names(identifiers) 
-                               %in% names(ccy$identifiers)]]
-            ccy$identifiers <- c(identifiers, ccy$identifiers)
-        }
-    } else ccy <- list(primary_id = primary_id,
-                        region = primary_id,
-                        multiplier = 1,
-                        tick_size= .01,
-                        identifiers = identifiers,
-                        type = "region")
-    dargs <- list(...)
-    if (!is.null(dargs)) {
-        for (nm in names(ccy)[names(ccy) %in% names(dargs)]) {
-            ccy[[nm]] <- dargs[[nm]]
-        }
-        dargs <- dargs[names(dargs)[!names(dargs) %in% names(ccy)]]
-        ccy <- c(ccy,dargs)
-    }        
-    class(ccy)<-c("region","event")
-    if (assign_i) {
-        assign(primary_id, ccy, 
-               pos=as.environment(.event) )
-        return(primary_id)
-    }
-    ccy
-}
-
 
 #' Primary accessor function for getting objects of class 'event'
 #'
