@@ -117,14 +117,7 @@ ls_markets("SE") #only the one auction
 ls_markets("S", match=FALSE) #anything with "S" in name
 
 ls_regions()
-ls_auctions()
-ls_options()
-ls_futures()
-ls_derivatives()
-ls_puts()
-ls_non_derivatives()
-#ls_by_expiry('20110618',ls_puts()) #put options that expire on Jun 18th, 2011
-#ls_puts(ls_by_expiry('20110618')) #same thing
+ls_sessions()
 
 rm_options('SPY_110618C130')
 rm_futures()
@@ -140,7 +133,6 @@ rm_regions()
 
 option_series.yahoo('DIA')
 ls_markets_by('underlying_id','DIA') #underlying_id must exactly match 'DIA'
-ls_derivatives('DIA',match=FALSE) #primary_ids that contain 'DIA'
 rm_markets()
 }
 }
