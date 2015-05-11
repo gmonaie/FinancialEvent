@@ -3,7 +3,7 @@
 \name{is.session.name}
 \alias{is.session.name}
 \title{check each element of a character vector to see if it is either the
-primary_id or an identifier of a \code{\link{exchange}}}
+primary_id or an identifier of a \code{\link{Session}}}
 \usage{
 is.session.name(x)
 }
@@ -12,6 +12,6 @@ is.session.name(x)
 }
 \description{
 check each element of a character vector to see if it is either the
-primary_id or an identifier of a \code{\link{exchange}}
+primary_id or an identifier of a \code{\link{Session}}
 }
 

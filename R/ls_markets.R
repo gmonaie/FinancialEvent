@@ -55,20 +55,13 @@
 #' @examples
 #'
 #' \dontrun{
-#' #rm_markets(keep.regions=FALSE) #remove everything from .market
 #'
 #' # First, create some markets
 #' region(c("USD", "EUR", "JPY"))
 #' #auctions
 #' auction(c("S", "SE", "SEE", "SPY"), 'USD')
-#' synthetic("SPX", "USD", src=list(src='yahoo', name='^GSPC'))
 #' #derivatives
 #' option('.SPY', 'USD', multiplier=100, underlying_id='SPY')
-#' option_series(root_id="SPY", expires='2011-06-18', callput='put', strike=130)
-#' option_series(root_id="SPY", expires='2011-09-17', callput='put', strike=130)
-#' option_series(root_id="SPY", expires='2011-06-18', callput='call', strike=130)
-#' future('ES', 'USD', multiplier=50, expires='2011-09-16', underlying_id="SPX")
-#' option('.ES','USD',multiplier=1, expires='2011-06',strike=1350, right='C', underlying_id='ES')
 #'
 #' # Now, the examples
 #' ls_markets() #all markets
@@ -78,19 +71,17 @@
 #' ls_regions()
 #' ls_sessions()
 #'
-#' rm_options('SPY_110618C130')
 #' rm_futures()
 #' ls_markets()
 #' #rm_markets('EUR') #Incorrect
-#' rm_markets('EUR', keep.regions=FALSE) #remove the region
-#' rm_regions('JPY') #or remove region like this
+#' rm_markets('ERXB') 
+#' rm_regions('JP') #or remove region like this
 #' ls_regions()
 #' ls_markets()
 #'
 #' rm_markets() #remove all but regions
 #' rm_regions()
 #'
-#' option_series.yahoo('DIA')
 #' ls_markets_by('underlying_id','DIA') #underlying_id must exactly match 'DIA'
 #' rm_markets()
 #' }
@@ -126,46 +117,14 @@ ls_sessions <- function(pattern=NULL,match=TRUE) {
   tmp_symbols <- NULL
   for (instr in symbols) {
     tmp_instr <- try(get(instr, pos = .market),silent=TRUE)
-    if (inherits(tmp_instr, 'auction') && inherits(tmp_instr, 'market')) {
+    if (inherits(tmp_instr, 'session') && inherits(tmp_instr, 'market')) {
       tmp_symbols <- c(tmp_symbols,instr)
     }
   }
   tmp_symbols
 }
 
-#' @export
-#' @rdname ls_markets
-ls_regions <- function(pattern=NULL, match=TRUE, includeFX=FALSE) {
-  symbols <- ls_markets(pattern=pattern, match=match)
-  tmp_symbols <- NULL
-  for (instr in symbols) {
-    tmp_instr <- try(get(instr, pos = .market),
-                     silent=TRUE)
-    if (inherits(tmp_instr, 'region')
-        && inherits(tmp_instr, 'market')) {
-      if (!inherits(tmp_instr, 'exchange_rate') || isTRUE(includeFX)) {
-        tmp_symbols <- c(tmp_symbols,instr)
-      }
-    }
-  }
-  tmp_symbols
-}
-
-#' @export
-#' @rdname ls_markets
-ls_non_regions <- function(pattern=NULL, match=TRUE, includeFX=TRUE) {
-  symbols <- ls_markets(pattern, match)
-  tmp_symbols <- NULL
-  for (instr in symbols) {
-    tmp_instr <- try(get(instr, pos = .market),
-                     silent=TRUE)
-    if (!inherits(tmp_instr, 'region') ||
-          (inherits(tmp_instr, 'exchange_rate') && includeFX) ) {
-      tmp_symbols <- c(tmp_symbols,instr)
-    }
-  }
-  tmp_symbols
-}
+ls_market_sessions <- ls_sessions
 
 #TODO: add error checking: check to see if .market exists
 
@@ -196,9 +155,9 @@ rm_sessions <- function(x) {
 
 #' @export
 #' @rdname ls_markets
-rm_regions <- function(x) {
+rm_exchanges <- function(x) {
     if (missing(x)) {
         x <- ls_regions()
     }
-    rm(list=x[x %in% ls_regions()], pos=.market)
+    rm(list=x[x %in% ls_exchanges()], pos=.market)
 }   

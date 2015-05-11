@@ -4,7 +4,6 @@
 \alias{Auction}
 \alias{EcoData}
 \alias{Event}
-\alias{Exchange}
 \alias{OpenClose}
 \alias{Policy}
 \alias{Session}
@@ -13,23 +12,17 @@
 Event(primary_id, ..., region, identifiers = NULL, type = NULL,
   assign_i = FALSE, overwrite = TRUE)
 
-Exchange(primary_id, region = NULL, multiplier = 1, tick_size = 0.01,
-  identifiers = NULL, assign_i = TRUE, overwrite = TRUE, ...)
+Auction(primary_id, region = NULL, identifiers = NULL, assign_i = TRUE,
+  overwrite = TRUE, ...)
 
-Session(primary_id, market = NULL, multiplier = 1, tick_size = 0.01,
-  identifiers = NULL, assign_i = TRUE, overwrite = TRUE, ...)
+EcoData(primary_id, region = NULL, identifiers = NULL, assign_i = TRUE,
+  overwrite = TRUE, ...)
 
-Auction(primary_id, region = NULL, multiplier = 1, tick_size = 0.01,
-  identifiers = NULL, assign_i = TRUE, overwrite = TRUE, ...)
+Policy(primary_id, region = NULL, identifiers = NULL, assign_i = TRUE,
+  overwrite = TRUE, ...)
 
-EcoData(primary_id, region = NULL, multiplier = 1, tick_size = 0.01,
-  identifiers = NULL, assign_i = TRUE, overwrite = TRUE, ...)
-
-Policy(primary_id, region = NULL, multiplier = 1, tick_size = 0.01,
-  identifiers = NULL, assign_i = TRUE, overwrite = TRUE, ...)
-
-OpenClose(primary_id, region = NULL, multiplier = 1, tick_size = 0.01,
-  identifiers = NULL, assign_i = TRUE, overwrite = TRUE, ...)
+OpenClose(primary_id, region = NULL, identifiers = NULL, assign_i = TRUE,
+  overwrite = TRUE, ...)
 }
 \arguments{
 \item{primary_id}{String describing the unique ID for the event. Most
@@ -54,14 +47,14 @@ TRUE for wrappers.}
 primary_id be overwritten? Default is TRUE. If FALSE, an error will be
 thrown and the event will not be created.}
 
+\item{underlying_id}{For derivatives, the identifier of the event that
+this one is derived from, may be \code{NULL} for cash settled events}
+
 \item{multiplier}{Numeric multiplier to apply to the price in the event
 to get to notional value.}
 
 \item{tick_size}{The tick increment of the event price in it's
 trading venue, as numeric quantity (e.g. 1/8 is .125)}
-
-\item{underlying_id}{For derivatives, the identifier of the event that
-this one is derived from, may be \code{NULL} for cash settled events}
 }
 \description{
 All 'exchange' and 'session' events must be defined before events of other types
@@ -129,12 +122,10 @@ You can (optionally) provide a \code{src} argument in which case, it will be
 used in a call to \code{\link[quantmod]{setSymbolLookup}}.
 }
 \seealso{
-\code{\link{Exchange}},
-\code{\link{Session}},
 \code{\link{Auction}},
 \code{\link{Policy}},
 \code{\link{EcoData}},
-\code{\link{EventInterval}},
+\code{\link{OpenClose}},
 \code{\link{load.events}}
 }
 
