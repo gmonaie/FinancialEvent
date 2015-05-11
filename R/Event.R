@@ -119,12 +119,10 @@ is.event.name <- function(x) {
 #' EcoData
 #' Event
 #' @seealso
-#' \code{\link{Exchange}},
-#' \code{\link{Session}},
 #' \code{\link{Auction}},
 #' \code{\link{Policy}},
 #' \code{\link{EcoData}},
-#' \code{\link{EventInterval}},
+#' \code{\link{OpenClose}},
 #' \code{\link{load.events}}
 #' @export
 Event <- function(primary_id, ..., region, identifiers = NULL, type = NULL, assign_i = FALSE, overwrite = TRUE) {
@@ -200,59 +198,7 @@ Event <- function(primary_id, ..., region, identifiers = NULL, type = NULL, assi
 
 #' @export
 #' @rdname Event
-Exchange <- function(primary_id , region=NULL , multiplier=1 , tick_size=.01, 
-                  identifiers = NULL, assign_i=TRUE, overwrite=TRUE, ...){
-    if (is.null(region)) stop ("'region' is a required argument")
-    if (!isTRUE(overwrite) && isTRUE(assign_i) &&
-        any(in.use <- primary_id %in% (li <- ls_events()))) {
-        stop(paste(paste("In Exchange(...) : ",
-                          "overwrite is FALSE and primary_id", 
-                          if (sum(in.use) > 1) "s are" else " is", 
-                          " already in use:\n", sep=""),
-                   paste(intersect(primary_id, li), collapse=", ")), 
-             call.=FALSE)
-    }
-    if (length(primary_id) > 1) {
-        out <- sapply(primary_id, Exchange, region=region, 
-                      multiplier=multiplier, tick_size=tick_size, 
-                      identifiers=identifiers, assign_i=assign_i,
-                      ...=..., simplify=assign_i)
-        return(if (assign_i) unname(out) else out)
-    }
-    Event(primary_id=primary_id, region=region, multiplier=multiplier, 
-               tick_size=tick_size, identifiers = identifiers, ..., 
-               type="exchange", assign_i=assign_i)
-}
-
-#' @export
-#' @rdname Event
-Session <- function(primary_id , region=NULL , multiplier=1 , tick_size=.01, 
-                  identifiers = NULL, assign_i=TRUE, overwrite=TRUE, ...){
-    if (is.null(region)) stop ("'region' is a required argument")
-    if (!isTRUE(overwrite) && isTRUE(assign_i) &&
-        any(in.use <- primary_id %in% (li <- ls_events()))) {
-        stop(paste(paste("In Session(...) : ",
-                          "overwrite is FALSE and primary_id", 
-                          if (sum(in.use) > 1) "s are" else " is", 
-                          " already in use:\n", sep=""),
-                   paste(intersect(primary_id, li), collapse=", ")), 
-             call.=FALSE)
-    }
-    if (length(primary_id) > 1) {
-        out <- sapply(primary_id, Session, region=region, 
-                      multiplier=multiplier, tick_size=tick_size, 
-                      identifiers=identifiers, assign_i=assign_i,
-                      ...=..., simplify=assign_i)
-        return(if (assign_i) unname(out) else out)
-    }
-    Event(primary_id=primary_id, region=region, multiplier=multiplier, 
-               tick_size=tick_size, identifiers = identifiers, ..., 
-               type="session", assign_i=assign_i)
-}
-
-#' @export
-#' @rdname Event
-Auction <- function(primary_id , region=NULL , multiplier=1 , tick_size=.01, 
+Auction <- function(primary_id , region=NULL , 
                   identifiers = NULL, assign_i=TRUE, overwrite=TRUE, ...){
     if (is.null(region)) stop ("'region' is a required argument")
     if (!isTRUE(overwrite) && isTRUE(assign_i) &&
@@ -266,19 +212,17 @@ Auction <- function(primary_id , region=NULL , multiplier=1 , tick_size=.01,
     }
     if (length(primary_id) > 1) {
         out <- sapply(primary_id, Auction, region=region, 
-                      multiplier=multiplier, tick_size=tick_size, 
                       identifiers=identifiers, assign_i=assign_i,
                       ...=..., simplify=assign_i)
         return(if (assign_i) unname(out) else out)
     }
-    Event(primary_id=primary_id, region=region, multiplier=multiplier, 
-               tick_size=tick_size, identifiers = identifiers, ..., 
+    Event(primary_id=primary_id, region=region, identifiers = identifiers, ..., 
                type="auction", assign_i=assign_i)
 }
 
 #' @export
 #' @rdname Event
-EcoData <- function(primary_id , region=NULL , multiplier=1 , tick_size=.01, 
+EcoData <- function(primary_id , region=NULL , 
                   identifiers = NULL, assign_i=TRUE, overwrite=TRUE, ...){
     if (is.null(region)) stop ("'region' is a required argument")
     if (!isTRUE(overwrite) && isTRUE(assign_i) &&
@@ -292,19 +236,17 @@ EcoData <- function(primary_id , region=NULL , multiplier=1 , tick_size=.01,
     }
     if (length(primary_id) > 1) {
         out <- sapply(primary_id, EcoData, region=region, 
-                      multiplier=multiplier, tick_size=tick_size, 
                       identifiers=identifiers, assign_i=assign_i,
                       ...=..., simplify=assign_i)
         return(if (assign_i) unname(out) else out)
     }
-    Event(primary_id=primary_id, region=region, multiplier=multiplier, 
-               tick_size=tick_size, identifiers = identifiers, ..., 
+    Event(primary_id=primary_id, region=region, identifiers = identifiers, ..., 
                type="ecodata", assign_i=assign_i)
 }
 
 #' @export
 #' @rdname Event
-Policy <- function(primary_id , region=NULL , multiplier=1 , tick_size=.01, 
+Policy <- function(primary_id , region=NULL , 
                   identifiers = NULL, assign_i=TRUE, overwrite=TRUE, ...){
     if (is.null(region)) stop ("'region' is a required argument")
     if (!isTRUE(overwrite) && isTRUE(assign_i) &&
@@ -318,19 +260,18 @@ Policy <- function(primary_id , region=NULL , multiplier=1 , tick_size=.01,
     }
     if (length(primary_id) > 1) {
         out <- sapply(primary_id, Policy, region=region, 
-                      multiplier=multiplier, tick_size=tick_size, 
                       identifiers=identifiers, assign_i=assign_i,
                       ...=..., simplify=assign_i)
         return(if (assign_i) unname(out) else out)
     }
-    Event(primary_id=primary_id, region=region, multiplier=multiplier, 
-               tick_size=tick_size, identifiers = identifiers, ..., 
+    Event(primary_id=primary_id, region=region, identifiers = identifiers, ..., 
                type="policy", assign_i=assign_i)
 }
 
+# should require a market session
 #' @export
 #' @rdname Event
-OpenClose <- function(primary_id , region=NULL , multiplier=1 , tick_size=.01, 
+OpenClose <- function(primary_id , region=NULL , 
                   identifiers = NULL, assign_i=TRUE, overwrite=TRUE, ...){
     if (is.null(region)) stop ("'region' is a required argument")
     if (!isTRUE(overwrite) && isTRUE(assign_i) &&
@@ -344,13 +285,11 @@ OpenClose <- function(primary_id , region=NULL , multiplier=1 , tick_size=.01,
     }
     if (length(primary_id) > 1) {
         out <- sapply(primary_id, OpenClose, region=region, 
-                      multiplier=multiplier, tick_size=tick_size, 
                       identifiers=identifiers, assign_i=assign_i,
                       ...=..., simplify=assign_i)
         return(if (assign_i) unname(out) else out)
     }
-    Event(primary_id=primary_id, region=region, multiplier=multiplier, 
-               tick_size=tick_size, identifiers = identifiers, ..., 
+    Event(primary_id=primary_id, region=region, identifiers = identifiers, ..., 
                type="openclose", assign_i=assign_i)
 }
 

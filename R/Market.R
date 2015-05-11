@@ -8,23 +8,6 @@
 
 .market <- new.env(parent=emptyenv())
 
-#' class test for object supposedly of type 'exchange'
-#' @param x object to test for type
-#' @export
-is.exchange <- function( x ) {
-  inherits( x, "exchange" )
-}
-
-#' check each element of a character vector to see if it is either the
-#' primary_id or an identifier of a \code{\link{exchange}}
-#' @param x character vector
-#' @export
-is.exchange.name <- function( x ) {
-  if (!is.character(x)) return(FALSE)
-  sapply(lapply(x, getMarket, type='exchange', silent=TRUE), inherits,
-         "exchange")
-}
-
 #' class test for object supposedly of type 'market'
 #' @param x object to test for type
 #' @export
@@ -42,23 +25,6 @@ is.market.name <- function( x ) {
          "market")
 }
 
-#' class test for object supposedly of type 'region'
-#' @param x object to test for type
-#' @export
-is.region <- function( x ) {
-  inherits( x, "region" )
-}
-
-#' check each element of a character vector to see if it is either the
-#' primary_id or an identifier of a \code{\link{exchange}}
-#' @param x character vector
-#' @export
-is.region.name <- function( x ) {
-  if (!is.character(x)) return(FALSE)
-  sapply(lapply(x, getMarket, type='region', silent=TRUE), inherits,
-         "region")
-}
-
 #' class test for object supposedly of type 'session'
 #' @param x object to test for type
 #' @export
@@ -67,7 +33,7 @@ is.session <- function( x ) {
 }
 
 #' check each element of a character vector to see if it is either the
-#' primary_id or an identifier of a \code{\link{exchange}}
+#' primary_id or an identifier of a \code{\link{Session}}
 #' @param x character vector
 #' @export
 is.session.name <- function( x ) {
@@ -111,11 +77,6 @@ is.session.name <- function( x ) {
 #' complain.  If you have better regular expression code, we'd be happy to
 #' include it.
 #'
-#' Identifiers will also try to be discovered as regular named arguments passed
-#' in via \code{...}.  We currently match any of the following:
-#' \code{"CUSIP","SEDOL","ISIN","OSI","Bloomberg","Reuters","X.RIC","CQG","TT","Yahoo","Google"}
-#' Others may be specified using a named list of identifiers, as described above.
-#'
 #' \code{assign_i} will use \code{\link{assign}} to place the constructed
 #' market class object into the \code{.market} environment.  Most of the
 #' special type-specific constructors will use \code{assign_i=TRUE} internally.
@@ -130,31 +91,25 @@ is.session.name <- function( x ) {
 #' As of version 0.10.0, the .market environment is located at the top level
 #' of the package. i.e. \code{.market}.
 #'
-#' \code{future} and \code{option} are used to define the contract specs of a
+#' \code{Continuous} and \code{Broken} are used to define the contract specs of a
 #' series of markets.  The \code{primary_id} for these can begin with 1 or
 #' 2 dots if you need to avoid overwriting another market.
-#' For example, if you have a \code{auction} with \sQuote{SPY} as the
-#' \code{primary_id}, you could use \sQuote{.SPY} as the \code{primary_id} of
-#' the \code{option} specs, and \sQuote{..SPY} as the \code{primary_id} of the
-#' single auction \code{future} specs. (or vice versa)
+#' For example, if you have a \code{session} with \sQuote{CBTN} as the
+#' \code{primary_id}, you could use \sQuote{.CBTN} as the \code{primary_id} of
+#' the regular session \code{REG} specs, and \sQuote{..CBTN} as the \code{primary_id} of the
+#' electronic session \code{ALL} specs. (or vice versa)
 #'
 #' You can (optionally) provide a \code{src} argument in which case, it will be
 #' used in a call to \code{\link[quantmod]{setSymbolLookup}}.
 #' @param primary_id String describing the unique ID for the market. Most
 #'   of the wrappers allow this to be a vector.
 #' @param ... Any other passthru parameters, including
-#' @param underlying_id For derivatives, the identifier of the market that
-#'   this one is derived from, may be \code{NULL} for cash settled markets
-#' @param region String describing the region ID of an object of type
-#'   \code{\link{region}}
-#' @param multiplier Numeric multiplier to apply to the price in the market
-#'   to get to notional value.
-#' @param tick_size The tick increment of the market price in it's
-#'   trading venue, as numeric quantity (e.g. 1/8 is .125)
+#' @param exchange String describing the exchange ID of an object of type
+#'   \code{\link{exchange}}
 #' @param identifiers Named list of any other identifiers that should also be
 #'   stored for this market
 #' @param type market type to be appended to the class definition, typically
-#'   not set by user
+#'   "continuous" or "broken"
 #' @param assign_i TRUE/FALSE. Should the market be assigned to the
 #'   \code{.market} environment?  Default is FALSE for \code{market},
 #'   TRUE for wrappers.
@@ -166,25 +121,27 @@ is.session.name <- function( x ) {
 #' Exchange
 #' Region
 #' @seealso
-#' \code{\link{Exchange}},
-#' \code{\link{Session}},
-#' \code{\link{Region}},
+#' \code{\link{Continuous}},
+#' \code{\link{Broken}},
+#' \code{\link{MarketSession}},
 #' \code{\link{load.markets}}
 #' @export
-Market <- function(primary_id, ..., region, identifiers = NULL, type = NULL, assign_i = FALSE, overwrite = TRUE) {
-  if (is.null(primary_id)) {
-    stop("you must specify a primary_id for the market")
-  }
+Market <- function(primary_id, ..., exchange, identifiers = NULL, type = NULL, assign_i = FALSE, overwrite = TRUE) {
+	if (is.null(primary_id)) {
+		stop("you must specify a primary_id for the market")
+	}
+
+	if (missing(exchange) || is.null(exchange) || 
+		(!missing(exchange) && !is.exchange.name(exchange))) {
+			stop("exchange ", exchange, " must be defined first")
+	}
 
   raw_id <- primary_id
   if (substr(primary_id, 1, 1) == 1) {
     primary_id <- substr(primary_id, 2, nchar(primary_id))
   }
   primary_id <- make.names(primary_id)
-  if (missing(region) || is.null(region) || 
-        (!missing(region) && !is.region.name(region))) {
-    stop("region ", region, " must be defined first")
-  }
+
   if (!hasArg(identifiers) || is.null(identifiers))
     identifiers = list()
   if (!is.list(identifiers)) {
@@ -210,13 +167,7 @@ Market <- function(primary_id, ..., region, identifiers = NULL, type = NULL, ass
     sarg[[primary_id]] <- arg$src
     setSymbolLookup(sarg)
   }
-  ident_str <- tolower(c("X.RIC", "RIC", "CUSIP", "SEDOL",
-                         "OSI", "Bloomberg", "Reuters", "ISIN", "CQG", "TT", "Yahoo",
-                         "Google"))
-  lnarg <- tolower(names(arg))
-  pos_arg <- which(lnarg %in% ident_str)
-  identifiers <- c(identifiers, arg[pos_arg])
-  arg[pos_arg] <- NULL
+
   if (is.null(type)) {
     tclass = "market"
   }
@@ -227,7 +178,8 @@ Market <- function(primary_id, ..., region, identifiers = NULL, type = NULL, ass
                "already exists in the .market environment.",
                "Set overwrite=TRUE to overwrite."))
   }
-  tmpmarket <- list(primary_id = primary_id, region = region,
+  tmpmarket <- list(primary_id = primary_id,
+  					exchange = exchange,
                    identifiers = identifiers,
                    type = type)
   if (length(arg) >= 1) {
@@ -244,81 +196,176 @@ Market <- function(primary_id, ..., region, identifiers = NULL, type = NULL, ass
 
 #' @export
 #' @rdname Market
-Session <- function(primary_id, market=NULL , multiplier=1 , tick_size=.01, 
-                  identifiers = NULL, assign_i=TRUE, overwrite=TRUE, ...){
-    if (is.null(market)) stop ("'market' is a required argument")
-    if (!isTRUE(overwrite) && isTRUE(assign_i) &&
-        any(in.use <- primary_id %in% (li <- ls_markets()))) {
-        stop(paste(paste("In Session(...) : ",
-                          "overwrite is FALSE and primary_id", 
-                          if (sum(in.use) > 1) "s are" else " is", 
-                          " already in use:\n", sep=""),
-                   paste(intersect(primary_id, li), collapse=", ")), 
-             call.=FALSE)
+Continuous <- function(primary_id, exchange, 
+                   identifiers = NULL, assign_i=TRUE, overwrite=TRUE, ...){
+    if (length(primary_id) > 1) stop('primary_id must be of length 1')
+    if (!isTRUE(overwrite) && assign_i==TRUE && 
+            primary_id %in% ls_instruments()) {
+        stop(sQuote(primary_id), " already in use and overwrite=FALSE")
     }
-    if (length(primary_id) > 1) {
-        out <- sapply(primary_id, Session, region=region, 
-                      multiplier=multiplier, tick_size=tick_size, 
-                      identifiers=identifiers, assign_i=assign_i,
-                      ...=..., simplify=assign_i)
-        return(if (assign_i) unname(out) else out)
+    if (missing(exchange)) {
+		stop("'exchange' is a required argument")
     }
-    Market(primary_id=primary_id, region=region, multiplier=multiplier, 
-               tick_size=tick_size, identifiers = identifiers, ..., 
-               type="session", assign_i=assign_i)
+
+    Market(primary_id=primary_id, exchange=exchange, identifiers = identifiers, ... , 
+               type="continuous", assign_i=assign_i)
 }
 
 #' @export
 #' @rdname Market
-Region <- function(primary_id, identifiers = NULL, assign_i=TRUE, ...){
-    if (hasArg("overwrite")) {
-        if (!list(...)$overwrite && isTRUE(assign_i) &&
-            any(in.use <- primary_id %in% (li <- ls_markets()))) {
-            stop(paste(paste("In Region(...) : ",
-                              "overwrite is FALSE and primary_id", 
-                              if (sum(in.use) > 1) "s are" else " is", 
-                              " already in use:\n", sep=""),
-                       paste(intersect(primary_id, li), collapse=", ")), 
-                call.=FALSE)
-        }
+Broken <- function(primary_id, exchange, 
+                   identifiers = NULL, assign_i=TRUE, overwrite=TRUE, ...){
+    if (length(primary_id) > 1) stop('primary_id must be of length 1')
+    if (!isTRUE(overwrite) && assign_i==TRUE && 
+            primary_id %in% ls_instruments()) {
+        stop(sQuote(primary_id), " already in use and overwrite=FALSE")
     }
-    if (length(primary_id) > 1) {
-        out <- sapply(primary_id, region, identifiers=identifiers, 
-                      assign_i=assign_i, ...=..., simplify=assign_i)
-        return(if (assign_i) unname(out) else out)
+    if (missing(exchange)) {
+		stop("'exchange' is a required argument")
     }
-    if (is.null(identifiers)) identifiers <- list()
-    ccy <- try(getMarket(primary_id,type='region',silent=TRUE))
-    if (is.market(ccy)) {
-        if (length(identifiers) > 0) {
-            if (!is.list(identifiers)) identifiers <- list(identifiers)
-            for (nm in names(ccy$identifiers)[names(ccy$identifiers) %in% 
-                                              names(identifiers)]) {
-                ccy$identifiers[[nm]] <- identifiers[[nm]]
-            }
-            identifiers <- identifiers[names(identifiers)[!names(identifiers) 
-                               %in% names(ccy$identifiers)]]
-            ccy$identifiers <- c(identifiers, ccy$identifiers)
-        }
-    } else ccy <- list(primary_id = primary_id,
-                        region = primary_id,
-                        identifiers = identifiers,
-                        type = "region")
-    dargs <- list(...)
-    if (!is.null(dargs)) {
-        for (nm in names(ccy)[names(ccy) %in% names(dargs)]) {
-            ccy[[nm]] <- dargs[[nm]]
-        }
-        dargs <- dargs[names(dargs)[!names(dargs) %in% names(ccy)]]
-        ccy <- c(ccy,dargs)
-    }        
-    class(ccy)<-c("region","market")
-    if (assign_i) {
-        assign(primary_id, ccy, 
-               pos=as.environment(.market) )
-        return(primary_id)
-    }
-    ccy
+
+    Market(primary_id=primary_id, exchange=exchange, identifiers = identifiers, ... , 
+               type="broken", assign_i=assign_i)
+}
+
+#' Constructors for market sessions
+#' 
+#' Constructors for sessions on markets such as ALL, REG, PRE, and POST
+#'
+#' The root \code{instrument} (e.g. the \code{future} or \code{option}) must be
+#' defined first.
+#'
+#' In custom parameters for these series contracts, we have often found it
+#' useful to store attributes such as local roll-on and roll-off dates
+#' (rolling not on the \code{first_listed} or \code{expires}.  
+#'
+#' For \code{future_series} and \code{option_series} you may either provide a 
+#'   \code{primary_id} (or vector of \code{primary_id}s), 
+#' OR both a \code{root_id} and \code{suffix_id}.
+#'
+#' Note that the code for \code{bond} and \code{bond_series} has not been 
+#' updated recently and may not support all the features supported for
+#' \code{option_series} and \code{future_series}.  Patches welcome.
+#'
+#' @param primary_id String describing the unique ID for the instrument. May be 
+#'   a vector for \code{future_series} and \code{option_series}
+#' @param root_id String product code or underlying_id, usually something like 
+#'   'ES' or 'CL' for futures, or the underlying stock symbol (maybe preceded 
+#'   with a dot) for equity options.
+#' @param suffix_id String suffix that should be associated with the series, 
+#'   usually something like 'Z9' or 'Mar10' denoting expiration and year.
+#' @param first_traded String coercible to Date for first trading day.
+#' @param expires String coercible to Date for expiration date
+#' @param maturity String coercible to Date for maturity date of bond series.
+#' @param callput Right of option; call or put
+#' @param strike Strike price of option
+#' @param payment_schedule Not currently being implemented
+#' @param identifiers Named list of any other identifiers that should also be 
+#'   stored for this instrument.
+#' @param assign_i TRUE/FALSE. Should the instrument be assigned in the 
+#'   \code{.instrument} environment?
+#' @param overwrite TRUE/FALSE. If FALSE, only \code{first_traded} and 
+#'   \code{expires} will be updated.
+#' @param ... any other passthru parameters
+#' @aliases 
+#' option_series
+#' future_series
+#' bond_series
+#' @examples
+#' \dontrun{
+#' currency("USD")
+#' future("ES","USD",multiplier=50, tick_size=0.25)
+#' MarketSession('ES_U1')
+#' MarketSession(root_id='ES',suffix_id='Z11')
+#' stock('SPY','USD')
+#' option('.SPY','USD',multiplier=100,underlying_id='SPY')
+#' #can use either .SPY or SPY for the root_id. 
+#' #it will find the one that is option specs.
+#' option_series('SPY_110917C125', expires='2011-09-16')
+#' option_series(root_id='SPY',suffix_id='111022P125')
+#' option_series(root_id='.SPY',suffix_id='111119C130')
+#' #multiple series instruments at once.
+#' continuous_session(c("ES_H12","ES_M12"))
+#' broken_session(c("SPY_110917C115","SPY_110917P115"))
+#' ERXB_ALL
+#' ERXB_REG
+#' CBTN_ALL
+#' CBTN_REG
+#' _PRE
+#' _POST
+#' _REG
+#' _ALL
+#' }
+#' @export
+#' @rdname Session
+Session <- function(primary_id, market_id=NULL, suffix_id=NULL, 
+                          identifiers = NULL, 
+                          assign_i=TRUE, overwrite=TRUE, ...){
+  # if overwrite==FALSE and assign_i==TRUE, we'll need to know what instruments
+  # are already defined.  Don't bother doing this if we're overwriting anyway
+  if (!isTRUE(overwrite) && isTRUE(assign_i)) li <- ls_markets()
+  if (missing(primary_id)) {
+      if (is.null(market_id) || is.null(suffix_id)) {
+          stop(paste('must provide either a primary_id or',
+                     'both a market_id and a suffix_id'))
+      } else {
+          primary_id <- paste(gsub("\\.","",market_id), suffix_id, sep="_")
+      }
+  } else if (length(primary_id) > 1) {
+      if (!isTRUE(overwrite) && isTRUE(assign_i) &&
+          any(in.use <- primary_id %in% li)) {
+          stop(paste(paste("In Session(...) : ",
+                            "overwrite is FALSE and primary_id", 
+                            if (sum(in.use) > 1) "s are" else " is", 
+                            " already in use:\n", sep=""),
+                   paste(intersect(primary_id, li), collapse=", ")), 
+               call.=FALSE)
+      }
+      out <- sapply(primary_id, MarketSession, market_id=market_id, 
+                    suffix_id=suffix_id, identifiers = identifiers, 
+                    assign_i=assign_i, ...=..., simplify=assign_i)
+      return(if (assign_i) unname(out) else out)
+  }
+  if (!isTRUE(overwrite) && isTRUE(assign_i) && primary_id %in% li) {
+      stop(sQuote(primary_id), " already in use and overwrite=FALSE")
+  }
+
+  tmpid <- unlist(strsplit(x = "CBTN_ALL", split = "_"))
+
+  pid <- NULL
+  pid$market <- tmpid[1]
+  pid$suffix <- tmpid[2]
+
+  if (is.null(market_id)) market_id <- pid$market
+  if (is.null(suffix_id)) suffix_id <- pid$suffix
+
+  contract <- getMarket(market_id,type='market')
+
+  if (!isTRUE(overwrite)) {
+      temp_series<-try(getMarket(primary_id, silent=TRUE),silent=TRUE)
+      if(inherits(temp_series,"session")) {
+          message("updating existing first_traded and expires for ",primary_id)
+          assign(primary_id, temp_series, 
+                 envir=as.environment(.market))
+          return(primary_id)
+      } else warning("No contract found to update. A new one will be created.")
+  }
+  args <- list()
+  args$primary_id <- primary_id
+  args$market_id <- market_id
+  args$suffix_id=suffix_id
+  args$exchange = contract$exchange
+  args$identifiers = identifiers
+  args$type=c("session", "market")
+  args$assign_i=assign_i
+  dargs<-list(...)
+  dargs$type=NULL
+  if (is.null(dargs$src) && !is.null(contract$src)){
+      dargs$src <- contract$src
+  }
+  args <- c(args, dargs)
+
+  do.call(Market, args)
 }
 
 #' Primary accessor function for getting objects of class 'market'
