@@ -274,6 +274,9 @@ Policy <- function(primary_id , region=NULL ,
 OpenClose <- function(primary_id, session=NULL, 
                   identifiers = NULL, assign_i=TRUE, overwrite=TRUE, ...){
     if (is.null(session) || !is.session.name(session)) stop ("'session' is a required argument")
+
+    region <- exchange(session)[['region']]
+
     if (!isTRUE(overwrite) && isTRUE(assign_i) &&
         any(in.use <- primary_id %in% (li <- ls_events()))) {
         stop(paste(paste("In OpenClose(...) : ",
