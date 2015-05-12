@@ -21,7 +21,7 @@ EcoData(primary_id, region = NULL, identifiers = NULL, assign_i = TRUE,
 Policy(primary_id, region = NULL, identifiers = NULL, assign_i = TRUE,
   overwrite = TRUE, ...)
 
-OpenClose(primary_id, region = NULL, identifiers = NULL, assign_i = TRUE,
+OpenClose(primary_id, session = NULL, identifiers = NULL, assign_i = TRUE,
   overwrite = TRUE, ...)
 }
 \arguments{

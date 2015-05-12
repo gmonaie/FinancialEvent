@@ -271,9 +271,9 @@ Policy <- function(primary_id , region=NULL ,
 # should require a market session
 #' @export
 #' @rdname Event
-OpenClose <- function(primary_id , region=NULL , 
+OpenClose <- function(primary_id, session=NULL, 
                   identifiers = NULL, assign_i=TRUE, overwrite=TRUE, ...){
-    if (is.null(region)) stop ("'region' is a required argument")
+    if (is.null(session) || !is.session.name(session)) stop ("'session' is a required argument")
     if (!isTRUE(overwrite) && isTRUE(assign_i) &&
         any(in.use <- primary_id %in% (li <- ls_events()))) {
         stop(paste(paste("In OpenClose(...) : ",
@@ -284,12 +284,12 @@ OpenClose <- function(primary_id , region=NULL ,
              call.=FALSE)
     }
     if (length(primary_id) > 1) {
-        out <- sapply(primary_id, OpenClose, region=region, 
+        out <- sapply(primary_id, OpenClose, session=session, 
                       identifiers=identifiers, assign_i=assign_i,
                       ...=..., simplify=assign_i)
         return(if (assign_i) unname(out) else out)
     }
-    Event(primary_id=primary_id, region=region, identifiers = identifiers, ..., 
+    Event(primary_id=primary_id, region=region, session=session, identifiers = identifiers, ..., 
                type="openclose", assign_i=assign_i)
 }
 
