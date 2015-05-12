@@ -330,7 +330,7 @@ Session <- function(primary_id, market_id=NULL, suffix_id=NULL,
       stop(sQuote(primary_id), " already in use and overwrite=FALSE")
   }
 
-  tmpid <- unlist(strsplit(x = "CBTN_ALL", split = "_"))
+  tmpid <- strsplit(market_id, '_')
 
   pid <- NULL
   pid$market <- tmpid[1]

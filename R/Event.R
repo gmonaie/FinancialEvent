@@ -135,7 +135,7 @@ Event <- function(primary_id, ..., region, identifiers = NULL, type = NULL, assi
     primary_id <- substr(primary_id, 2, nchar(primary_id))
   }
   primary_id <- make.names(primary_id)
-  if (missing(region) || is.null(region) || 
+  if (missing(region) || is.null(region) ||
         (!missing(region) && !is.region.name(region))) {
     stop("region ", region, " must be defined first")
   }
@@ -198,98 +198,101 @@ Event <- function(primary_id, ..., region, identifiers = NULL, type = NULL, assi
 
 #' @export
 #' @rdname Event
-Auction <- function(primary_id , region=NULL , 
+Auction <- function(primary_id , region=NULL ,
                   identifiers = NULL, assign_i=TRUE, overwrite=TRUE, ...){
     if (is.null(region)) stop ("'region' is a required argument")
     if (!isTRUE(overwrite) && isTRUE(assign_i) &&
         any(in.use <- primary_id %in% (li <- ls_events()))) {
         stop(paste(paste("In Auction(...) : ",
-                          "overwrite is FALSE and primary_id", 
-                          if (sum(in.use) > 1) "s are" else " is", 
+                          "overwrite is FALSE and primary_id",
+                          if (sum(in.use) > 1) "s are" else " is",
                           " already in use:\n", sep=""),
-                   paste(intersect(primary_id, li), collapse=", ")), 
+                   paste(intersect(primary_id, li), collapse=", ")),
              call.=FALSE)
     }
     if (length(primary_id) > 1) {
-        out <- sapply(primary_id, Auction, region=region, 
+        out <- sapply(primary_id, Auction, region=region,
                       identifiers=identifiers, assign_i=assign_i,
                       ...=..., simplify=assign_i)
         return(if (assign_i) unname(out) else out)
     }
-    Event(primary_id=primary_id, region=region, identifiers = identifiers, ..., 
+    Event(primary_id=primary_id, region=region, identifiers = identifiers, ...,
                type="auction", assign_i=assign_i)
 }
 
 #' @export
 #' @rdname Event
-EcoData <- function(primary_id , region=NULL , 
+EcoData <- function(primary_id , region=NULL ,
                   identifiers = NULL, assign_i=TRUE, overwrite=TRUE, ...){
     if (is.null(region)) stop ("'region' is a required argument")
     if (!isTRUE(overwrite) && isTRUE(assign_i) &&
         any(in.use <- primary_id %in% (li <- ls_events()))) {
         stop(paste(paste("In EcoData(...) : ",
-                          "overwrite is FALSE and primary_id", 
-                          if (sum(in.use) > 1) "s are" else " is", 
+                          "overwrite is FALSE and primary_id",
+                          if (sum(in.use) > 1) "s are" else " is",
                           " already in use:\n", sep=""),
-                   paste(intersect(primary_id, li), collapse=", ")), 
+                   paste(intersect(primary_id, li), collapse=", ")),
              call.=FALSE)
     }
     if (length(primary_id) > 1) {
-        out <- sapply(primary_id, EcoData, region=region, 
+        out <- sapply(primary_id, EcoData, region=region,
                       identifiers=identifiers, assign_i=assign_i,
                       ...=..., simplify=assign_i)
         return(if (assign_i) unname(out) else out)
     }
-    Event(primary_id=primary_id, region=region, identifiers = identifiers, ..., 
+    Event(primary_id=primary_id, region=region, identifiers = identifiers, ...,
                type="ecodata", assign_i=assign_i)
 }
 
 #' @export
 #' @rdname Event
-Policy <- function(primary_id , region=NULL , 
+Policy <- function(primary_id , region=NULL ,
                   identifiers = NULL, assign_i=TRUE, overwrite=TRUE, ...){
     if (is.null(region)) stop ("'region' is a required argument")
     if (!isTRUE(overwrite) && isTRUE(assign_i) &&
         any(in.use <- primary_id %in% (li <- ls_events()))) {
         stop(paste(paste("In Policy(...) : ",
-                          "overwrite is FALSE and primary_id", 
-                          if (sum(in.use) > 1) "s are" else " is", 
+                          "overwrite is FALSE and primary_id",
+                          if (sum(in.use) > 1) "s are" else " is",
                           " already in use:\n", sep=""),
-                   paste(intersect(primary_id, li), collapse=", ")), 
+                   paste(intersect(primary_id, li), collapse=", ")),
              call.=FALSE)
     }
     if (length(primary_id) > 1) {
-        out <- sapply(primary_id, Policy, region=region, 
+        out <- sapply(primary_id, Policy, region=region,
                       identifiers=identifiers, assign_i=assign_i,
                       ...=..., simplify=assign_i)
         return(if (assign_i) unname(out) else out)
     }
-    Event(primary_id=primary_id, region=region, identifiers = identifiers, ..., 
+    Event(primary_id=primary_id, region=region, identifiers = identifiers, ...,
                type="policy", assign_i=assign_i)
 }
 
 # should require a market session
 #' @export
 #' @rdname Event
-OpenClose <- function(primary_id , region=NULL , 
+OpenClose <- function(primary_id, session=NULL,
                   identifiers = NULL, assign_i=TRUE, overwrite=TRUE, ...){
-    if (is.null(region)) stop ("'region' is a required argument")
+    if (is.null(session) || !is.session.name(session)) stop ("'session' is a required argument")
+
+    region <- region(exchange(session))
+
     if (!isTRUE(overwrite) && isTRUE(assign_i) &&
         any(in.use <- primary_id %in% (li <- ls_events()))) {
         stop(paste(paste("In OpenClose(...) : ",
-                          "overwrite is FALSE and primary_id", 
-                          if (sum(in.use) > 1) "s are" else " is", 
+                          "overwrite is FALSE and primary_id",
+                          if (sum(in.use) > 1) "s are" else " is",
                           " already in use:\n", sep=""),
-                   paste(intersect(primary_id, li), collapse=", ")), 
+                   paste(intersect(primary_id, li), collapse=", ")),
              call.=FALSE)
     }
     if (length(primary_id) > 1) {
-        out <- sapply(primary_id, OpenClose, region=region, 
+        out <- sapply(primary_id, OpenClose, session=session,
                       identifiers=identifiers, assign_i=assign_i,
                       ...=..., simplify=assign_i)
         return(if (assign_i) unname(out) else out)
     }
-    Event(primary_id=primary_id, region=region, identifiers = identifiers, ..., 
+    Event(primary_id=primary_id, region=region, session=session, identifiers = identifiers, ...,
                type="openclose", assign_i=assign_i)
 }
 
