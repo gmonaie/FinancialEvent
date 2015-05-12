@@ -50,7 +50,7 @@
 #' EventInterval('US.10YR.FIX','US.CBTN.REG.CLOSE.POST','US')
 #' }
 #' @export
-EventInterval <- function (primary_id, region,
+EventInterval <- function (primary_id,
                                   start, end, anchor,
                                   startn = 1, endn = 1,
                                   startoff = 0, endoff = 0,
@@ -58,32 +58,39 @@ EventInterval <- function (primary_id, region,
                                   assign_i=TRUE,
                                   type = c("eventinterval"))
 {
-    dargs <- list(...)
+  dargs <- list(...)
 
-    if (missing(start) || is.null(start) ||
-        (!missing(start) && !is.event.name(start))) {
-        stop("start event '", start, "' must be defined first")
-    }
+  if (missing(start) || is.null(start) ||
+      (!missing(start) && !is.event.name(start))) {
+      stop("start event '", start, "' must be defined first")
+  }
 
-    if (missing(end) || is.null(end) ||
-        (!missing(end) && !is.event.name(end))) {
-        stop("end event '", end, "' must be defined first")
-    }
+  if (missing(end) || is.null(end) ||
+      (!missing(end) && !is.event.name(end))) {
+      stop("end event '", end, "' must be defined first")
+  }
 
-    if (missing(anchor)) {
-        anchor <- start
-    } else {
-        if (!is.event.name(anchor)) {
-            stop("anchor event '", anchor, "' must be defined first")
-        }
-    }
+  if (missing(anchor)) {
+      anchor <- start
+  } else {
+      if (!is.event.name(anchor)) {
+          stop("anchor event '", anchor, "' must be defined first")
+      }
+  }
 
-    Event(primary_id = primary_id, region = region,
-        identifiers = identifiers, assign_i=assign_i,
-              ... = dargs, type = type, anchor = anchor,
-              start = start, end = end,
-              startn = startn, endn = endn,
-              startoff = startoff, endoff = endoff)
+  region <- region(anchor)
+
+  if (is.null(type)) {
+    tclass = "eventinterval"
+  }
+  else tclass = unique(c(type, "eventinterval"))
+
+  Event(primary_id = primary_id, region = region,
+      identifiers = identifiers, assign_i=assign_i,
+            ... = dargs, type = tclass, anchor = anchor,
+            start = start, end = end,
+            startn = startn, endn = endn,
+            startoff = startoff, endoff = endoff)
 }
 
 #' @export

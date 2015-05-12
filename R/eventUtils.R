@@ -34,9 +34,7 @@ region.character <- function (x, Date, expired = TRUE, silent = FALSE, ...)
 #' @export
 region.event <- function (x, Date, expired = TRUE, silent = FALSE, ...)
 {
-  if (is.event(x))
-    return(region(x))
-  else {
+  if (is.event(x)) {
     xp <- x[["region"]]
     if (length(xp) == 0)
       return(NULL)

@@ -7,7 +7,7 @@
 \alias{Settle2Settle}
 \title{synthetic event constructors}
 \usage{
-EventInterval(primary_id, region, start, end, anchor, startn = 1, endn = 1,
+EventInterval(primary_id, start, end, anchor, startn = 1, endn = 1,
   startoff = 0, endoff = 0, ..., identifiers = NULL, assign_i = TRUE,
   type = c("eventinterval"))
 
@@ -22,8 +22,6 @@ Settle2Settle(primary_id, settle = NULL, identifiers = NULL,
 }
 \arguments{
 \item{primary_id}{chr string of primary identifier of event to be defined.}
-
-\item{region}{chr string name of region denomination}
 
 \item{start}{starting event}
 
@@ -48,6 +46,8 @@ Settle2Settle(primary_id, settle = NULL, identifiers = NULL,
 \item{overwrite}{if FALSE and an event with the same \code{primary_id}
 is already defined, an error will be thrown and no events will be
 created.}
+
+\item{region}{chr string name of region denomination}
 
 \item{\dots}{any other passthrough parameters}
 }
