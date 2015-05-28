@@ -65,7 +65,8 @@ rm_concessions(x)
 
 rm_breaks(x)
 
-ls_events(pattern = NULL, match = TRUE, verbose = TRUE)
+ls_events(pattern = NULL, match = TRUE, verbose = TRUE,
+  includeEI = FALSE)
 
 ls_auctions(pattern = NULL, match = TRUE)
 

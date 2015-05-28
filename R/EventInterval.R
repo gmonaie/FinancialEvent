@@ -8,6 +8,25 @@
 #
 ###############################################################################
 
+#' class test for object supposedly of type 'event'
+#' @param x object to test for type
+#' @export
+is.eventinterval <- function( x ) {
+  inherits( x, "eventinterval" )
+}
+
+#' check each element of a character vector to see if it is either the
+#' primary_id or an identifier of an \code{\link{event}}
+#' @param x character vector
+#' @return logical vector
+#' @export
+is.eventinterval.name <- function(x) {
+  if (!is.character(x))
+    return(FALSE)
+  sapply(lapply(x, getEvent, silent = TRUE), inherits,
+         "eventinterval")
+}
+
 #' synthetic event constructors
 #'
 #' define EventInterval, and other synthetic events wrapped around EventInterval
