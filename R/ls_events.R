@@ -104,7 +104,7 @@
 #' }
 #' @export
 #' @rdname ls_events
-ls_events <- function(pattern=NULL, match=TRUE, verbose=TRUE) {
+ls_events <- function(pattern=NULL, match=TRUE, verbose=TRUE, includeEI = FALSE) {
   if (length(pattern) > 1 && !match) {
     if (verbose)
       warning("Using match=TRUE because length of pattern > 1.")
@@ -124,7 +124,18 @@ ls_events <- function(pattern=NULL, match=TRUE, verbose=TRUE) {
 
   is.iname <- is.event.name(symbols)
   if (!any(is.iname)) return(NULL)
-  symbols[is.iname]
+  symbols <- symbols[is.iname]
+
+  tmp_symbols <- NULL
+  for (instr in symbols) {
+    tmp_instr <- try(get(instr, pos = .event),
+                     silent=TRUE)
+    if (!inherits(tmp_instr, 'eventinterval') ||
+          (inherits(tmp_instr, 'eventinterval') && includeEI) ) {
+      tmp_symbols <- c(tmp_symbols,instr)
+    }
+  }
+  tmp_symbols
 }
 
 #' @export
