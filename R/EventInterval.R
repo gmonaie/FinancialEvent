@@ -79,15 +79,13 @@ EventInterval <- function (primary_id,
 {
   dargs <- list(...)
 
-  if (missing(start) || is.null(start) ||
-      (!missing(start)) {
+  if (missing(start) || is.null(start)) {
       stop("start event '", start, "' must be defined first")
   }
 
   start <- str_split(start, pattern = "\\|")[[1]]
 
-  if (missing(end) || is.null(end) ||
-      (!missing(end)) {
+  if (missing(end) || is.null(end)) {
       stop("end event '", end, "' must be defined first")
   }
 
