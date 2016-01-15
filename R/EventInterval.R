@@ -68,6 +68,7 @@ is.eventinterval.name <- function(x) {
 #' OpenClose('US.CBTN.REG.CLOSE.POST','US')
 #' EventInterval('US.10YR.FIX','US.CBTN.REG.CLOSE.POST','US')
 #' }
+#' @importFrom stringr str_split
 #' @export
 EventInterval <- function (primary_id,
                                   start, end, anchor,
