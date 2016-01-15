@@ -68,6 +68,7 @@ is.eventinterval.name <- function(x) {
 #' OpenClose('US.CBTN.REG.CLOSE.POST','US')
 #' EventInterval('US.10YR.FIX','US.CBTN.REG.CLOSE.POST','US')
 #' }
+#' @importFrom stringr str_split
 #' @export
 EventInterval <- function (primary_id,
                                   start, end, anchor,
@@ -79,15 +80,17 @@ EventInterval <- function (primary_id,
 {
   dargs <- list(...)
 
-  if (missing(start) || is.null(start) ||
-      (!missing(start) && !is.event.name(start))) {
+  if (missing(start) || is.null(start)) {
       stop("start event '", start, "' must be defined first")
   }
 
-  if (missing(end) || is.null(end) ||
-      (!missing(end) && !is.event.name(end))) {
+  start <- str_split(start, pattern = "\\|")[[1]]
+
+  if (missing(end) || is.null(end)) {
       stop("end event '", end, "' must be defined first")
   }
+
+  end <- str_split(end, pattern = "\\|")[[1]]
 
   if (missing(anchor)) {
       anchor <- start

@@ -7,8 +7,8 @@ Type: Package
 Author: Gei Lin
 Description: Infrastructure for defining meta-data and
     relationships for financial events.
-Version: 1.0.2
-Date: 2015-05-28
+Version: 1.0.3
+Date: 2016-01-15
 URL: https://github.com/gmonaie/FinancialEvent
 Depends:
     R (>= 3.0.3)
